@@ -49,12 +49,12 @@ jobs:
         run: |
           cd builds
           if [ ! -d ".git" ]; then
-            git init
-            git checkout -b builds
+            git init -b builds
             git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B builds
           git add .
           git commit -m "Update CloudStream plugins and plugins.json [skip ci]" || exit 0
           git push origin builds
