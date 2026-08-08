@@ -71,7 +71,7 @@ class AbyssPlayer : ExtractorApi() {
     }
 }
 
-class VipServer : ExtractorApi() {
+open class VipServer : ExtractorApi() {
     override var name = "VIP Server"
     override var mainUrl = "https://v2.efek.stream"
     override val requiresReferer = true
@@ -115,4 +115,8 @@ class VipServer : ExtractorApi() {
             else -> Qualities.Unknown.value
         }
     }
+}
+
+class FaEfekStream : VipServer() {
+    override var mainUrl = "https://fa.efek.stream"
 }

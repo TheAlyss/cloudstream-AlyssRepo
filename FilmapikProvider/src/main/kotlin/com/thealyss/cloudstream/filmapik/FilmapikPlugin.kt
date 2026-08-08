@@ -11,5 +11,6 @@ class FilmapikPlugin : Plugin() {
         registerExtractorAPI(Byseqekaho())
         registerExtractorAPI(AbyssPlayer())
         registerExtractorAPI(VipServer())
+        registerExtractorAPI(FaEfekStream())
     }
 }
