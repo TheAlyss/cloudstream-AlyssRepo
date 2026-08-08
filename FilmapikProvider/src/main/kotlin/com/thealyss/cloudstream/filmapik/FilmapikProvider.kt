@@ -162,24 +162,17 @@ class FilmapikProvider : MainAPI() {
             }
         }
 
-        // Load extractors for each server URL found
+        // Load extractors for each server URL found with domain mirror mapping
         var linksFound = false
         serverList.forEach { (serverName, embedUrl) ->
-            val extracted = loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)
+            val mappedUrl = embedUrl
+                .replace("byseqekaho.com", "filemoon.sx")
+                .replace("fiilmapik.strp2p.site", "streamp2p.com")
+
+            val extracted = loadExtractor(mappedUrl, playPageUrl, subtitleCallback, callback) ||
+                            loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)
+
             if (extracted) {
-                linksFound = true
-            } else {
-                // Fallback: emit direct link for player if extractor didn't handle it
-                callback.invoke(
-                    newExtractorLink(
-                        source = "$name ($serverName)",
-                        name = serverName,
-                        url = embedUrl
-                    ) {
-                        this.referer = mainUrl
-                        this.quality = Qualities.P1080.value
-                    }
-                )
                 linksFound = true
             }
         }
