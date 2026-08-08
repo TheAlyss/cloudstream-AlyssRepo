@@ -40,6 +40,8 @@ subprojects {
 
     dependencies {
         cloudstream("com.lagradost:cloudstream3:pre-release")
+        implementation("com.github.Blatzar:NiceHttp:0.4.18")
+        implementation("org.jsoup:jsoup:1.18.1")
     }
 
     android {

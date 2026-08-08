@@ -34,6 +34,7 @@ To add this plugin repository to your CloudStream application:
 
 | Plugin / Provider | Package | Status | Supported Types |
 | :--- | :--- | :---: | :--- |
+| **Filmapik Provider** | `com.thealyss.cloudstream.filmapik` | OK (1) | Movies, TV Series, K-Drama, Anime |
 | **Alyss Test Provider** | `com.thealyss.cloudstream` | OK (1) | Movies, TV Series |
 
 ---
