@@ -1,0 +1,11 @@
+*.iml
+.gradle
+/build
+/*/build
+.idea
+.ds_store
+*.cs3
+plugins.json
+local.properties
+.navigation
+captures

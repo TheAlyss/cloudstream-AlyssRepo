@@ -1,0 +1,8 @@
+{
+  "name": "TheAlyss CloudStream Repository",
+  "description": "Official CloudStream plugin repository for TheAlyss",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/plugins.json"
+  ]
+}
