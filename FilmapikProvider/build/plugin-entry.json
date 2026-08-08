@@ -1,0 +1,21 @@
+{
+    "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
+    "fileHash": "sha256-ed96d9f149c888e3b012d0d88dec227cd89d22259ddbefc83d7c04443a4c3c60",
+    "apiVersion": 1,
+    "fileSize": 11950,
+    "status": 1,
+    "authors": [
+        "TheAlyss"
+    ],
+    "tvTypes": [
+        "Movie",
+        "TvSeries",
+        "AsianDrama",
+        "Anime"
+    ],
+    "version": 1,
+    "internalName": "FilmapikProvider",
+    "description": "Nonton Film & Series Subtitle Indonesia dari Filmapik",
+    "url": "",
+    "name": "FilmapikProvider"
+}

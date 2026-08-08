@@ -1,0 +1,19 @@
+{
+    "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
+    "fileHash": "sha256-34508bcd3619ddf613e06b063022d93b938c77c953b324feb016eef84deabb8f",
+    "apiVersion": 1,
+    "fileSize": 5529,
+    "status": 1,
+    "authors": [
+        "TheAlyss"
+    ],
+    "tvTypes": [
+        "Movie",
+        "TvSeries"
+    ],
+    "version": 1,
+    "internalName": "AlyssTestProvider",
+    "description": "Test Provider for Alyss CloudStream Repository",
+    "url": "",
+    "name": "AlyssTestProvider"
+}
