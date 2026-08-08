@@ -1,5 +1,8 @@
 name: Build Plugins
 
+permissions:
+  contents: write
+
 concurrency:
   group: "build"
   cancel-in-progress: true
@@ -16,6 +19,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
@@ -50,11 +55,11 @@ jobs:
           cd builds
           if [ ! -d ".git" ]; then
             git init -b builds
-            git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B builds
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git add .
           git commit -m "Update CloudStream plugins and plugins.json [skip ci]" || exit 0
           git push origin builds
