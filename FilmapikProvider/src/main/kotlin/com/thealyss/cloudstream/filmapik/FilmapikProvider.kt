@@ -1,5 +1,6 @@
 package com.thealyss.cloudstream.filmapik
 
+import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
@@ -162,17 +163,11 @@ class FilmapikProvider : MainAPI() {
             }
         }
 
-        // Load extractors for each server URL found with domain mirror mapping
+        Log.d("FilmapikProvider", "serverList: $serverList")
+
         var linksFound = false
         serverList.forEach { (serverName, embedUrl) ->
-            val mappedUrl = embedUrl
-                .replace("byseqekaho.com", "filemoon.sx")
-                .replace("fiilmapik.strp2p.site", "streamp2p.com")
-
-            val extracted = loadExtractor(mappedUrl, playPageUrl, subtitleCallback, callback) ||
-                            loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)
-
-            if (extracted) {
+            if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
                 linksFound = true
             }
         }
