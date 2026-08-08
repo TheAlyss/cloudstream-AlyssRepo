@@ -40,16 +40,15 @@ class FilmapikProvider : MainAPI() {
         val href = element.attr("href")
         if (href.isBlank() || href == "#") return null
 
-        val imgElement = element.selectFirst("img") ?: return null
-        val title = element.selectFirst("h3")?.text()
-            ?: imgElement.attr("alt")
-            ?: return null
-
+        val title = element.selectFirst("h3")?.text() ?: return null
         val cleanTitle = title
             .replace(Regex("(?i)^Nonton\\s+Film\\s+"), "")
             .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia$"), "")
             .trim()
 
+        if (cleanTitle.isBlank()) return null
+
+        val imgElement = element.selectFirst("img") ?: return null
         val posterUrl = imgElement.attr("src").ifBlank {
             val srcset = imgElement.attr("srcset")
             if (srcset.isNotBlank()) srcset.substringBefore(" ") else ""
@@ -83,7 +82,8 @@ class FilmapikProvider : MainAPI() {
             .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia$"), "")
             .trim()
 
-        val posterUrl = document.selectFirst("span.famv-img-shimmer img, div.w-48 img, article img")?.attr("src")
+        val posterUrl = document.selectFirst("div.shrink-0 img, div.w-48.shrink-0 img, div.md\\:w-64 img, img[src*='/poster/']")?.attr("src")
+            ?: document.selectFirst("meta[property=og:image]")?.attr("content")
         val plot = document.selectFirst(".famv-truncated-text p, div.famv-truncated-text")?.text()
         val yearText = document.selectFirst(".badge-cyan")?.text()
         val year = yearText?.let { Regex("(\\d{4})").find(it)?.groupValues?.get(1)?.toIntOrNull() }
