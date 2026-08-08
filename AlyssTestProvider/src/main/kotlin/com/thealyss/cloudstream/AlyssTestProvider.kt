@@ -44,8 +44,8 @@ class AlyssTestProvider : MainAPI() {
         callback.invoke(
             newExtractorLink(
                 source = name,
-                name = "Test Stream",
-                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                name = "Test Stream 1080p",
+                url = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4"
             ) {
                 this.referer = mainUrl
                 this.quality = Qualities.P1080.value

@@ -29,7 +29,7 @@ class FilmapikProvider : MainAPI() {
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val url = if (page > 1) "${request.data}/page/$page" else request.data
         val document = app.get(url).document
-        val homeItems = document.select("a.group, article.card a").mapNotNull { element ->
+        val homeItems = document.select("a.group, article.card a, div.famv-post-item a").mapNotNull { element ->
             toSearchResult(element)
         }
         return newHomePageResponse(request.name, homeItems)
@@ -55,7 +55,7 @@ class FilmapikProvider : MainAPI() {
         }
 
         val quality = element.selectFirst(".badge-quality")?.text() ?: ""
-        val isTvShow = href.contains("/tvshows-genre/") || href.contains("/series/") || href.contains("/season/")
+        val isTvShow = href.contains("/tvshows/") || href.contains("/tvshows-genre/") || href.contains("/series/") || href.contains("/season/")
 
         val tvType = if (isTvShow) TvType.TvSeries else TvType.Movie
 
@@ -68,7 +68,7 @@ class FilmapikProvider : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> {
         val searchUrl = "$mainUrl/?s=${query.replace(" ", "+")}"
         val document = app.get(searchUrl).document
-        return document.select("a.group, article.card a").mapNotNull { element ->
+        return document.select("a.group, article.card a, div.famv-post-item a").mapNotNull { element ->
             toSearchResult(element)
         }
     }
@@ -82,7 +82,7 @@ class FilmapikProvider : MainAPI() {
             .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia$"), "")
             .trim()
 
-        val posterUrl = document.selectFirst("span.famv-img-shimmer img, div.w-48 img")?.attr("src")
+        val posterUrl = document.selectFirst("span.famv-img-shimmer img, div.w-48 img, article img")?.attr("src")
         val plot = document.selectFirst(".famv-truncated-text p, div.famv-truncated-text")?.text()
         val yearText = document.selectFirst(".badge-cyan")?.text()
         val year = yearText?.let { Regex("(\\d{4})").find(it)?.groupValues?.get(1)?.toIntOrNull() }
@@ -90,7 +90,7 @@ class FilmapikProvider : MainAPI() {
 
         val playUrl = if (url.endsWith("/play/")) url else "${url.removeSuffix("/")}/play/"
 
-        val isTvShow = url.contains("/tvshows-genre/") || url.contains("/series/") || url.contains("/season/")
+        val isTvShow = url.contains("/tvshows/") || url.contains("/tvshows-genre/") || url.contains("/series/") || url.contains("/season/")
 
         if (isTvShow) {
             val episodes = listOf(
@@ -122,8 +122,9 @@ class FilmapikProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val document = app.get(dataUrl).document
-        val serverUrls = mutableListOf<String>()
+        val playPageUrl = if (dataUrl.endsWith("/play/")) dataUrl else "${dataUrl.removeSuffix("/")}/play/"
+        val document = app.get(playPageUrl).document
+        val serverList = mutableListOf<Pair<String, String>>() // Name to URL
 
         // 1. Extract from script window.famvServers
         val scriptContent = document.select("script").html()
@@ -133,9 +134,10 @@ class FilmapikProvider : MainAPI() {
                 val jsonArray = JSONArray(match.groupValues[1])
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
+                    val name = obj.optString("name", "Server ${i + 1}")
                     val embedUrl = obj.optString("url")
                     if (embedUrl.isNotBlank()) {
-                        serverUrls.add(embedUrl)
+                        serverList.add(name to embedUrl)
                     }
                 }
             } catch (e: Exception) {
@@ -144,26 +146,44 @@ class FilmapikProvider : MainAPI() {
         }
 
         // 2. Extract from player list buttons
-        document.select("a.famv-server-btn, #player-list a").forEach { btn ->
+        document.select("a.famv-server-btn, #player-list a, .player-option").forEach { btn ->
             val embedUrl = btn.attr("data-url").ifBlank { btn.attr("href") }
-            if (embedUrl.isNotBlank() && embedUrl != "#" && !serverUrls.contains(embedUrl)) {
-                serverUrls.add(embedUrl)
+            val serverName = btn.attr("data-server").ifBlank { btn.text() }.ifBlank { "Server" }
+            if (embedUrl.isNotBlank() && embedUrl != "#" && serverList.none { it.second == embedUrl }) {
+                serverList.add(serverName to embedUrl)
             }
         }
 
         // 3. Extract direct iframe src
         document.select("iframe[src]").forEach { iframe ->
             val src = iframe.attr("src")
-            if (src.isNotBlank() && !src.startsWith("about:") && !serverUrls.contains(src)) {
-                serverUrls.add(src)
+            if (src.isNotBlank() && !src.startsWith("about:") && serverList.none { it.second == src }) {
+                serverList.add("Iframe Server" to src)
             }
         }
 
         // Load extractors for each server URL found
-        serverUrls.forEach { embedUrl ->
-            loadExtractor(embedUrl, dataUrl, subtitleCallback, callback)
+        var linksFound = false
+        serverList.forEach { (serverName, embedUrl) ->
+            val extracted = loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)
+            if (extracted) {
+                linksFound = true
+            } else {
+                // Fallback: emit direct link for player if extractor didn't handle it
+                callback.invoke(
+                    newExtractorLink(
+                        source = "$name ($serverName)",
+                        name = serverName,
+                        url = embedUrl
+                    ) {
+                        this.referer = mainUrl
+                        this.quality = Qualities.P1080.value
+                    }
+                )
+                linksFound = true
+            }
         }
 
-        return serverUrls.isNotEmpty()
+        return linksFound
     }
 }
