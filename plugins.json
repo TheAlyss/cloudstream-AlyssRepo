@@ -3,6 +3,7 @@
         "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
         "fileHash": "sha256-34508bcd3619ddf613e06b063022d93b938c77c953b324feb016eef84deabb8f",
         "apiVersion": 1,
+        "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
         "fileSize": 5529,
         "status": 1,
         "authors": [
@@ -15,13 +16,14 @@
         "version": 1,
         "internalName": "AlyssTestProvider",
         "description": "Test Provider for Alyss CloudStream Repository",
-        "url": "",
+        "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AlyssTestProvider.cs3",
         "name": "AlyssTestProvider"
     },
     {
         "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
         "fileHash": "sha256-ed96d9f149c888e3b012d0d88dec227cd89d22259ddbefc83d7c04443a4c3c60",
         "apiVersion": 1,
+        "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
         "fileSize": 11950,
         "status": 1,
         "authors": [
@@ -36,7 +38,7 @@
         "version": 1,
         "internalName": "FilmapikProvider",
         "description": "Nonton Film & Series Subtitle Indonesia dari Filmapik",
-        "url": "",
+        "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/FilmapikProvider.cs3",
         "name": "FilmapikProvider"
     }
 ]
