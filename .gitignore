@@ -1,7 +1,7 @@
 *.iml
 .gradle
-/build
-/*/build
+build/
+**/build/
 .idea
 .ds_store
 *.cs3
