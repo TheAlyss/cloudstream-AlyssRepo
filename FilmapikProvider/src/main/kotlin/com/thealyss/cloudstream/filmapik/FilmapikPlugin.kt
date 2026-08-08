@@ -9,5 +9,7 @@ class FilmapikPlugin : Plugin() {
     override fun load(context: Context) {
         registerMainAPI(FilmapikProvider())
         registerExtractorAPI(Byseqekaho())
+        registerExtractorAPI(AbyssPlayer())
+        registerExtractorAPI(VipServer())
     }
 }
