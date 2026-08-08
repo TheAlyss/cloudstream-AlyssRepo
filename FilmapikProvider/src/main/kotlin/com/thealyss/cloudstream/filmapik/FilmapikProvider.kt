@@ -226,8 +226,12 @@ class FilmapikProvider : MainAPI() {
 
         var linksFound = false
         serverList.forEach { (serverName, embedUrl) ->
-            if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
-                linksFound = true
+            try {
+                if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
+                    linksFound = true
+                }
+            } catch (e: Throwable) {
+                e.printStackTrace()
             }
         }
 
