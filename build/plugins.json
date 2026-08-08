@@ -1,7 +1,7 @@
 [
     {
         "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
-        "fileHash": "sha256-8a8b212886be49c48679dfa3cae91bcc1f88a6c0e7238617c7eaf8e6ab8c1983",
+        "fileHash": "sha256-af48ae729d98f099b0fd23d3b5a254fac5582a3ed4f1040c45ca3f23b7015539",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
         "fileSize": 5537,
@@ -13,7 +13,7 @@
             "Movie",
             "TvSeries"
         ],
-        "version": 1,
+        "version": 2,
         "internalName": "AlyssTestProvider",
         "description": "Test Provider for Alyss CloudStream Repository",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AlyssTestProvider.cs3",
@@ -21,10 +21,10 @@
     },
     {
         "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
-        "fileHash": "sha256-45b5f7f832baa6ca53c7610377911cb8b0da032c3ceb842d5e57d27351b6e90f",
+        "fileHash": "sha256-0ab7f0acd6e5f692e8182ec2babaff104d602a3a89d4269eefde669785c9f223",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 13557,
+        "fileSize": 17640,
         "status": 1,
         "authors": [
             "TheAlyss"
@@ -35,7 +35,7 @@
             "AsianDrama",
             "Anime"
         ],
-        "version": 1,
+        "version": 4,
         "internalName": "FilmapikProvider",
         "description": "Nonton Film & Series Subtitle Indonesia dari Filmapik",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/FilmapikProvider.cs3",

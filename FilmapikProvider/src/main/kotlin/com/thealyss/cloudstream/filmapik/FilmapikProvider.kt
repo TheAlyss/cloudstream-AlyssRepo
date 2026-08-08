@@ -94,13 +94,61 @@ class FilmapikProvider : MainAPI() {
         val isTvShow = url.contains("/tvshows/") || url.contains("/tvshows-genre/") || url.contains("/series/") || url.contains("/season/")
 
         if (isTvShow) {
-            val episodes = listOf(
-                newEpisode(playUrl) {
-                    this.name = "Episode 1"
-                    this.season = 1
-                    this.episode = 1
+            val episodes = mutableListOf<Episode>()
+            val seasonContainers = document.select("div.famv-season-list[data-season], div.famv-season-list")
+
+            if (seasonContainers.isNotEmpty()) {
+                seasonContainers.forEach { seasonContainer ->
+                    val seasonNum = seasonContainer.attr("data-season").toIntOrNull() ?: 1
+                    seasonContainer.select("a.famv-episode-btn, a[href*='/episodes/']").forEach { epLink ->
+                        val epHref = epLink.attr("href")
+                        if (epHref.isNotBlank() && epHref != "#") {
+                            val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
+                            val epText = epLink.text().trim()
+
+                            val epNum = Regex("""(?i)episode-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
+                                ?: Regex("""(?i)EP\s*(\d+)""").find(epText)?.groupValues?.get(1)?.toIntOrNull()
+                                ?: 1
+
+                            val seasonFromUrl = Regex("""(?i)season-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
+                                ?: seasonNum
+
+                            episodes.add(
+                                newEpisode(epPlayUrl) {
+                                    this.name = if (epText.isNotBlank()) epText else "Episode $epNum"
+                                    this.season = seasonFromUrl
+                                    this.episode = epNum
+                                }
+                            )
+                        }
+                    }
                 }
-            )
+            } else {
+                document.select("a.famv-episode-btn, a[href*='/episodes/']").forEach { epLink ->
+                    val epHref = epLink.attr("href")
+                    if (epHref.isNotBlank() && epHref != "#") {
+                        val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
+                        val epText = epLink.text().trim()
+
+                        val epNum = Regex("""(?i)episode-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
+                            ?: Regex("""(?i)EP\s*(\d+)""").find(epText)?.groupValues?.get(1)?.toIntOrNull()
+                            ?: 1
+
+                        val seasonFromUrl = Regex("""(?i)season-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull() ?: 1
+
+                        if (episodes.none { it.data == epPlayUrl }) {
+                            episodes.add(
+                                newEpisode(epPlayUrl) {
+                                    this.name = if (epText.isNotBlank()) epText else "Episode $epNum"
+                                    this.season = seasonFromUrl
+                                    this.episode = epNum
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
                 this.plot = plot
