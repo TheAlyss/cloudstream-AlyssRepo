@@ -44,6 +44,10 @@ subprojects {
         implementation("org.jsoup:jsoup:1.18.1")
     }
 
+    cloudstream {
+        setRepo("https://github.com/TheAlyss/cloudstream-AlyssRepo")
+    }
+
     android {
         compileSdkVersion(35)
 
