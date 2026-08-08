@@ -17,16 +17,25 @@ Official CloudStream plugin repository maintained by **TheAlyss**. This reposito
 
 ## Installation in CloudStream
 
-To add this plugin repository to your CloudStream application:
+### Option 1: 1-Click Install (Mobile Browser)
+
+If you are reading this on your device with CloudStream installed:
+
+[👉 **Add Repository to CloudStream**](cloudstream://https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/main/repo.json)
+
+---
+
+### Option 2: Manual Setup
 
 1. Open **CloudStream** on your Android device.
 2. Go to **Settings** > **Extensions**.
 3. Select **Add Repository**.
-4. Enter the Repository URL:
+4. Enter the Repository Manifest URL:
    ```
-   https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.json
+   https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/main/repo.json
    ```
-5. Tap **Add**. You can now install and update plugins directly within CloudStream.
+   *(Or direct plugins list: `https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/plugins.json`)*
+5. Tap **Add**. You can now install and update **Filmapik** and **AlyssTest** directly within CloudStream.
 
 ---
 

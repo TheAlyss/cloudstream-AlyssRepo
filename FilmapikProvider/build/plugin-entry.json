@@ -1,8 +1,9 @@
 {
     "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
-    "fileHash": "sha256-ed96d9f149c888e3b012d0d88dec227cd89d22259ddbefc83d7c04443a4c3c60",
+    "fileHash": "sha256-45b5f7f832baa6ca53c7610377911cb8b0da032c3ceb842d5e57d27351b6e90f",
     "apiVersion": 1,
-    "fileSize": 11950,
+    "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
+    "fileSize": 13557,
     "status": 1,
     "authors": [
         "TheAlyss"
@@ -16,6 +17,6 @@
     "version": 1,
     "internalName": "FilmapikProvider",
     "description": "Nonton Film & Series Subtitle Indonesia dari Filmapik",
-    "url": "",
+    "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/FilmapikProvider.cs3",
     "name": "FilmapikProvider"
 }

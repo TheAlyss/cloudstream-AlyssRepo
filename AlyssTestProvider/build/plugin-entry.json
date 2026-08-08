@@ -1,8 +1,9 @@
 {
     "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
-    "fileHash": "sha256-34508bcd3619ddf613e06b063022d93b938c77c953b324feb016eef84deabb8f",
+    "fileHash": "sha256-8a8b212886be49c48679dfa3cae91bcc1f88a6c0e7238617c7eaf8e6ab8c1983",
     "apiVersion": 1,
-    "fileSize": 5529,
+    "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
+    "fileSize": 5537,
     "status": 1,
     "authors": [
         "TheAlyss"
@@ -14,6 +15,6 @@
     "version": 1,
     "internalName": "AlyssTestProvider",
     "description": "Test Provider for Alyss CloudStream Repository",
-    "url": "",
+    "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AlyssTestProvider.cs3",
     "name": "AlyssTestProvider"
 }
