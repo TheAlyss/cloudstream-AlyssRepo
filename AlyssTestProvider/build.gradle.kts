@@ -10,6 +10,7 @@ dependencies {
 version = 1
 
 cloudstream {
+    setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")
     description = "Test Provider for Alyss CloudStream Repository"
     authors = listOf("TheAlyss")
     status = 1

@@ -11,6 +11,7 @@ dependencies {
 version = 1
 
 cloudstream {
+    setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")
     description = "Nonton Film & Series Subtitle Indonesia dari Filmapik"
     authors = listOf("TheAlyss")
     status = 1
