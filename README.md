@@ -25,7 +25,7 @@ Official CloudStream plugin repository maintained by **TheAlyss**. This reposito
 
 If you are reading this on your device with CloudStream installed:
 
-👉 [**Add Repository to CloudStream**](cloudstream://https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/main/repo.json)
+👉 [**Add Repository to CloudStream**](cloudstreamrepo://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/main/repo.json)
 
 ---
 
