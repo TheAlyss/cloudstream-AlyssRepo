@@ -84,6 +84,8 @@ class FilmapikProvider : MainAPI() {
 
         val posterUrl = document.selectFirst("div.shrink-0 img, div.w-48.shrink-0 img, div.md\\:w-64 img, img[src*='/poster/']")?.attr("src")
             ?: document.selectFirst("meta[property=og:image]")?.attr("content")
+        val backdropUrl = document.selectFirst("meta[property=og:image]")?.attr("content")
+            ?.takeIf { it.contains("/backdrop/") }
         val plot = document.selectFirst(".famv-truncated-text p, div.famv-truncated-text")?.text()
         val yearText = document.selectFirst(".badge-cyan")?.text()
         val year = yearText?.let { Regex("(\\d{4})").find(it)?.groupValues?.get(1)?.toIntOrNull() }
@@ -162,6 +164,7 @@ class FilmapikProvider : MainAPI() {
 
             return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = posterUrl
+                this.backgroundPosterUrl = backdropUrl ?: posterUrl
                 this.plot = plot
                 this.year = year
                 this.tags = genres
@@ -170,6 +173,7 @@ class FilmapikProvider : MainAPI() {
 
         return newMovieLoadResponse(title, url, TvType.Movie, playUrl) {
             this.posterUrl = posterUrl
+            this.backgroundPosterUrl = backdropUrl ?: posterUrl
             this.plot = plot
             this.year = year
             this.tags = genres
