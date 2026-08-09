@@ -1,11 +1,12 @@
 [
     {
         "iconUrl": "https://filmapik.dev/wp-content/uploads/2026/06/cropped-apple-icon-180x180-1-1-270x270.webp",
-        "fileHash": "sha256-84b4bef7961e85648969abfbaf2bd70aa7bb58ae62a34d5c42fb8e378ce70cc7",
+        "fileHash": "sha256-0e67ab8adf9b8929d052e5b20daaf53af9d03a4cc5e00a8a4d89780cf718e114",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 20483,
+        "fileSize": 20699,
         "status": 1,
+        "language": "id",
         "authors": [
             "TheAlyss"
         ],
@@ -15,7 +16,7 @@
             "AsianDrama",
             "Anime"
         ],
-        "version": 10,
+        "version": 11,
         "internalName": "FilmapikProvider",
         "description": "Nonton Film & Series Subtitle Indonesia dari Filmapik",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/FilmapikProvider.cs3",
