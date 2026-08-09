@@ -1,26 +1,6 @@
 [
     {
         "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
-        "fileHash": "sha256-af48ae729d98f099b0fd23d3b5a254fac5582a3ed4f1040c45ca3f23b7015539",
-        "apiVersion": 1,
-        "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 5537,
-        "status": 1,
-        "authors": [
-            "TheAlyss"
-        ],
-        "tvTypes": [
-            "Movie",
-            "TvSeries"
-        ],
-        "version": 2,
-        "internalName": "AlyssTestProvider",
-        "description": "Test Provider for Alyss CloudStream Repository",
-        "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AlyssTestProvider.cs3",
-        "name": "AlyssTestProvider"
-    },
-    {
-        "iconUrl": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png",
         "fileHash": "sha256-ffd345abcad472ff18495ed142055abffd58fff2e09f2273d226661f0d1c793f",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
