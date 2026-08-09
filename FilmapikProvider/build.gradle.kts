@@ -8,7 +8,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.1")
 }
 
-version = 9
+version = 10
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")
@@ -16,5 +16,5 @@ cloudstream {
     authors = listOf("TheAlyss")
     status = 1
     tvTypes = listOf("Movie", "TvSeries", "AsianDrama", "Anime")
-    iconUrl = "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/icon.png"
+    iconUrl = "https://filmapik.dev/wp-content/uploads/2026/06/cropped-apple-icon-180x180-1-1-270x270.webp"
 }
