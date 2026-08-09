@@ -21,16 +21,6 @@ Official CloudStream plugin repository maintained by **TheAlyss**. This reposito
 
 ## 📥 Installation in CloudStream
 
-### Option 1: 1-Click Install (Mobile Browser)
-
-If you are reading this on your device with CloudStream installed:
-
-👉 [**Add Repository to CloudStream**](cloudstreamrepo://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/main/repo.json)
-
----
-
-### Option 2: Manual Setup
-
 1. Open **CloudStream** on your Android device.
 2. Go to **Settings** $\rightarrow$ **Extensions**.
 3. Select **Add Repository**.
