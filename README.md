@@ -48,7 +48,6 @@ If you are reading this on your device with CloudStream installed:
 | Plugin / Provider | Package | Status | Supported Types |
 | :--- | :--- | :---: | :--- |
 | **Filmapik Provider** | `com.thealyss.cloudstream.filmapik` | 🟢 Active | Movies, TV Series, K-Drama, Anime |
-| **Alyss Test Provider** | `com.thealyss.cloudstream` | 🟢 Active | Movies, TV Series |
 
 ---
 
