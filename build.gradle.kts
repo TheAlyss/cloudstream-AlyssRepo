@@ -1,4 +1,4 @@
-import com.android.build.gradle.BaseExtension
+﻿import com.android.build.gradle.BaseExtension
 import com.lagradost.cloudstream3.gradle.CloudstreamExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -42,6 +42,8 @@ subprojects {
         cloudstream("com.lagradost:cloudstream3:pre-release")
         implementation("com.github.Blatzar:NiceHttp:0.4.18")
         implementation("org.jsoup:jsoup:1.18.1")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
+        implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
     }
 
     cloudstream {
