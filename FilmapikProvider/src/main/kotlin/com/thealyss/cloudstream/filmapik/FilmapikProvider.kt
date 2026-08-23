@@ -102,13 +102,13 @@ class FilmapikProvider : MainAPI() {
             if (seasonContainers.isNotEmpty()) {
                 seasonContainers.forEach { seasonContainer ->
                     val seasonContainerNum = seasonContainer.attr("data-season").toIntOrNull() ?: 1
-                    seasonContainer.select("a.famv-episode-btn, a[href*='/episodes/']").forEach { epLink ->
+                    seasonContainer.select("a.famv-episode-btn, a[href*='/episodes/'], a[href*='/episode/']").forEach { epLink ->
                         val epHref = epLink.attr("href")
                         if (epHref.isNotBlank() && epHref != "#") {
                             val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
-                            val epText = epLink.text().trim()
+                            val rawEpText = epLink.text().trim()
 
-                            val seasonFromText = Regex("""(?i)S(\d+)\s*[:\sE]*\s*E?(\d+)""").find(epText)
+                            val seasonFromText = Regex("""(?i)S(\d+)\s*[:\sE]*\s*E?(\d+)""").find(rawEpText)
                             val seasonFromUrl = Regex("""(?i)season-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
 
                             val seasonNum = seasonFromText?.groupValues?.get(1)?.toIntOrNull()
@@ -117,12 +117,26 @@ class FilmapikProvider : MainAPI() {
 
                             val epNum = seasonFromText?.groupValues?.get(2)?.toIntOrNull()
                                 ?: Regex("""(?i)episode-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
-                                ?: Regex("""(?i)EP\s*(\d+)""").find(epText)?.groupValues?.get(1)?.toIntOrNull()
+                                ?: Regex("""(?i)(?:EP|Episode)\s*(\d+)""").find(rawEpText)?.groupValues?.get(1)?.toIntOrNull()
+                                ?: Regex("""\b(\d+)\b""").find(rawEpText)?.groupValues?.get(1)?.toIntOrNull()
                                 ?: 1
+
+                            val cleanTitle = rawEpText
+                                .replace(Regex("(?i)^Nonton\\s+(?:Film|Series|Drama)?\\s*"), "")
+                                .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia.*$"), "")
+                                .replace(Regex("(?i)^S\\d+\\s*[:\\sE]*\\s*E?\\d+\\s*[-:]?\\s*"), "")
+                                .replace(Regex("(?i)^(?:EP|Episode)\\s*\\d+\\s*[-:]?\\s*"), "")
+                                .trim()
+
+                            val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
+                                "Episode $epNum: $cleanTitle"
+                            } else {
+                                "Episode $epNum"
+                            }
 
                             episodes.add(
                                 newEpisode(epPlayUrl) {
-                                    this.name = if (epText.isNotBlank()) epText else "Episode $epNum"
+                                    this.name = displayName
                                     this.season = seasonNum
                                     this.episode = epNum
                                 }
@@ -131,13 +145,13 @@ class FilmapikProvider : MainAPI() {
                     }
                 }
             } else {
-                document.select("a.famv-episode-btn, a[href*='/episodes/']").forEach { epLink ->
+                document.select("a.famv-episode-btn, a[href*='/episodes/'], a[href*='/episode/']").forEach { epLink ->
                     val epHref = epLink.attr("href")
                     if (epHref.isNotBlank() && epHref != "#") {
                         val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
-                        val epText = epLink.text().trim()
+                        val rawEpText = epLink.text().trim()
 
-                        val seasonFromText = Regex("""(?i)S(\d+)\s*[:\sE]*\s*E?(\d+)""").find(epText)
+                        val seasonFromText = Regex("""(?i)S(\d+)\s*[:\sE]*\s*E?(\d+)""").find(rawEpText)
                         val seasonFromUrl = Regex("""(?i)season-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
 
                         val seasonNum = seasonFromText?.groupValues?.get(1)?.toIntOrNull()
@@ -146,23 +160,39 @@ class FilmapikProvider : MainAPI() {
 
                         val epNum = seasonFromText?.groupValues?.get(2)?.toIntOrNull()
                             ?: Regex("""(?i)episode-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
-                            ?: Regex("""(?i)EP\s*(\d+)""").find(epText)?.groupValues?.get(1)?.toIntOrNull()
+                            ?: Regex("""(?i)(?:EP|Episode)\s*(\d+)""").find(rawEpText)?.groupValues?.get(1)?.toIntOrNull()
+                            ?: Regex("""\b(\d+)\b""").find(rawEpText)?.groupValues?.get(1)?.toIntOrNull()
                             ?: 1
 
-                        if (episodes.none { it.data == epPlayUrl }) {
-                            episodes.add(
-                                newEpisode(epPlayUrl) {
-                                    this.name = if (epText.isNotBlank()) epText else "Episode $epNum"
-                                    this.season = seasonNum
-                                    this.episode = epNum
-                                }
-                            )
+                        val cleanTitle = rawEpText
+                            .replace(Regex("(?i)^Nonton\\s+(?:Film|Series|Drama)?\\s*"), "")
+                            .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia.*$"), "")
+                            .replace(Regex("(?i)^S\\d+\\s*[:\\sE]*\\s*E?\\d+\\s*[-:]?\\s*"), "")
+                            .replace(Regex("(?i)^(?:EP|Episode)\\s*\\d+\\s*[-:]?\\s*"), "")
+                            .trim()
+
+                        val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
+                            "Episode $epNum: $cleanTitle"
+                        } else {
+                            "Episode $epNum"
                         }
+
+                        episodes.add(
+                            newEpisode(epPlayUrl) {
+                                this.name = displayName
+                                this.season = seasonNum
+                                this.episode = epNum
+                            }
+                        )
                     }
                 }
             }
 
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            val sortedEpisodes = episodes
+                .distinctBy { it.data }
+                .sortedWith(compareBy({ it.season ?: 1 }, { it.episode ?: 1 }))
+
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, sortedEpisodes) {
                 this.posterUrl = posterUrl
                 this.backgroundPosterUrl = backdropUrl ?: posterUrl
                 this.plot = plot
