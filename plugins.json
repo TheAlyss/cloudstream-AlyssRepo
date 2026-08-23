@@ -23,25 +23,25 @@
         "name": "FilmapikProvider"
     },
     {
-        "iconUrl": "https://moviebox.ph/favicon.ico",
-        "fileHash": "sha256-5f6a79f923482222213029c8f4a7612af98835f237896a2b1590a8c9978e5371",
+        "iconUrl": "https://movieboxph.app/wp-content/uploads/2025/11/Movie-Box-icon.webp",
+        "fileHash": "sha256-4121c130116544ace35a78039b3cd36d7a4e7b609e5fb383a967c75b96525879",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 30537,
+        "fileSize": 29539,
         "status": 1,
         "language": "id",
         "authors": [
             "TheAlyss"
         ],
         "tvTypes": [
-            "Movie",
             "TvSeries",
-            "AsianDrama",
-            "Anime"
+            "Movie",
+            "Anime",
+            "AsianDrama"
         ],
-        "version": 1,
+        "version": 2,
         "internalName": "MovieboxProvider",
-        "description": "Nonton Movie, Drama & Series dari MovieBox",
+        "description": "MovieBox - Streaming Movie Subtitle Indonesia",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/MovieboxProvider.cs3",
         "name": "MovieboxProvider"
     }
