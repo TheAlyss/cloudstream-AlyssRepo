@@ -1,52 +1,55 @@
-# 🎬 TheAlyss CloudStream Repository
+﻿# 🌟 TheAlyss CloudStream Repository
 
 [![Build Plugins](https://github.com/TheAlyss/cloudstream-AlyssRepo/actions/workflows/build.yml/badge.svg)](https://github.com/TheAlyss/cloudstream-AlyssRepo/actions/workflows/build.yml)
 ![CloudStream](https://img.shields.io/badge/CloudStream-v3.0+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-Official CloudStream plugin repository maintained by **TheAlyss**. This repository builds and distributes custom [CloudStream 3](https://github.recloudstream.org) extensions and streaming providers.
+Official CloudStream plugin repository maintained by **TheAlyss**. This repository builds and distributes custom [CloudStream 3](https://github.com/recloudstream/cloudstream) extensions and streaming providers.
 
 ---
 
-## ✨ Features
+## 📲 Cara Pasang / Installation in CloudStream
 
-- **CloudStream Plugin Support**: Full compatibility with the modern CloudStream 3 plugin system.
-- **Multi-Provider Support**: Scalable multi-module Gradle architecture allowing multiple providers to be added effortlessly.
-- **Automated CI/CD Builds**: Automated GitHub Actions workflow to build `.cs3` binaries on push.
-- **Binary Artifacts (`.cs3`)**: Auto-packaged and compressed plugin binaries.
-- **Dynamic Metadata (`plugins.json`)**: Automatically generated plugin manifests.
-- **GitHub Hosting**: Hosted directly on GitHub via raw content URLs.
+### Kaedah 1: 1-Click Install (Mobile / Android)
+Klik butang di bawah dari telefon pintar anda yang mempunyai aplikasi CloudStream:
+
+[![Add to CloudStream](https://img.shields.io/badge/CloudStream-Add%20Repository-blue?style=for-the-badge&logo=android)](cloudstreamrepo://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.json)
 
 ---
 
-## 📥 Installation in CloudStream
-
-1. Open **CloudStream** on your Android device.
-2. Go to **Settings** $\rightarrow$ **Extensions**.
-3. Select **Add Repository**.
-4. Enter the Repository Manifest URL:
+### Kaedah 2: Guna Shortcode
+1. Buka **CloudStream** ➡️ **Settings** ➡️ **Extensions**.
+2. Tekan **Add Repository**.
+3. Masukkan **Shortcode** atau **Short URL**:
    ```text
-   https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/main/repo.json
+   alyss
    ```
-   *(Or direct plugins list: `https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/plugins.json`)*
-5. Tap **Add**. You can now install and update extensions directly within CloudStream.
+   *(atau `https://py.md/alyss`)*
+4. Tekan **Add**.
 
 ---
 
-## 🧩 Included Plugins & Providers
+### Kaedah 3: URL Penuh Manual (Raw URL)
+```text
+https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.json
+```
+
+---
+
+## 📦 Included Plugins & Providers
 
 | Plugin / Provider | Package | Status | Supported Types |
 | :--- | :--- | :---: | :--- |
 | **Filmapik Provider** | `com.thealyss.cloudstream.filmapik` | 🟢 Active | Movies, TV Series, K-Drama, Anime |
+| **MovieBox Provider** | `com.thealyss.cloudstream.moviebox` | 🟢 Active | Movies, TV Series, K-Drama, C-Drama, Anime |
 
 ---
 
 ## ⚙️ How GitHub Actions CI/CD Works
 
-1. When code is pushed to the `main` or `master` branch, GitHub Actions executes `.github/workflows/build.yml`.
-2. The workflow checks out the repository source code and the `builds` branch.
-3. It compiles all submodules with Java 17 and generates the `.cs3` binaries and updated `plugins.json`.
-4. The generated binaries and metadata are automatically committed and pushed to the `builds` branch.
+1. Apabila kod di-*push* ke cawangan `main`, GitHub Actions akan menjalankan `.github/workflows/build.yml`.
+2. Workflow mengkompilasi modul-modul provider dan menjana fail binari `.cs3` serta `plugins.json`.
+3. Hasil binaan disimpan secara automatik di cawangan `builds` untuk edaran pantas.
 
 ---
 
