@@ -8,47 +8,39 @@ Official CloudStream plugin repository maintained by **TheAlyss**. This reposito
 
 ---
 
-## 📲 Cara Pasang / Installation in CloudStream
+## 📲 Installation in CloudStream
 
-### Kaedah 1: 1-Click Install (Mobile / Android)
-Klik butang di bawah dari telefon pintar anda yang mempunyai aplikasi CloudStream:
+### Method 1: 1-Click Install (Mobile / Android)
+Click the button below from your Android device with CloudStream installed:
 
 [![Add to CloudStream](https://img.shields.io/badge/CloudStream-Add%20Repository-blue?style=for-the-badge&logo=android)](cloudstreamrepo://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.json)
 
 ---
 
-### Kaedah 2: Guna Shortcode / Short URL
-1. Buka **CloudStream** ➡️ **Settings** ➡️ **Extensions**.
-2. Tekan **Add Repository**.
-3. Masukkan Short URL (tekan ikon salin di bawah):
+### Method 2: Use Short URL / Shortcode
+1. Open **CloudStream** ➡️ **Settings** ➡️ **Extensions**.
+2. Tap **Add Repository**.
+3. Enter the Short URL (click the copy button below):
    ```text
    https://py.md/alyss
    ```
-4. Tekan **Add**.
+4. Tap **Add**.
 
 ---
 
-### Kaedah 3: URL Penuh Manual (Raw URL)
+### Method 3: Manual Full URL (Raw URL)
 ```text
 https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.json
 ```
 
 ---
 
-## 📦 Included Plugins & Providers
+## 📦 Available Extensions
 
-| Plugin / Provider | Package | Status | Supported Types |
-| :--- | :--- | :---: | :--- |
-| **Filmapik Provider** | `com.thealyss.cloudstream.filmapik` | 🟢 Active | Movies, TV Series, K-Drama, Anime |
-| **MovieBox Provider** | `com.moviebox` | 🟢 Active | Movies, TV Series, K-Drama, C-Drama, Anime |
-
----
-
-## ⚙️ How GitHub Actions CI/CD Works
-
-1. Apabila kod di-*push* ke cawangan `main`, GitHub Actions akan menjalankan `.github/workflows/build.yml`.
-2. Workflow mengkompilasi modul-modul provider dan menjana fail binari `.cs3` serta `plugins.json`.
-3. Hasil binaan disimpan secara automatik di cawangan `builds` untuk edaran pantas.
+| No. | Extension | Status | Content Type |
+| :---: | :--- | :---: | :--- |
+| 1 | **Filmapik** | 🟢 Active | 🎬 Movies & 📺 TV Series & 🎭 Asian Drama & 🌸 Anime |
+| 2 | **MovieBox** | 🟢 Active | 🎬 Movies & 📺 TV Series & 🎭 Asian Drama & 🌸 Anime |
 
 ---
 
