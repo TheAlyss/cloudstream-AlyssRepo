@@ -17,14 +17,13 @@ Klik butang di bawah dari telefon pintar anda yang mempunyai aplikasi CloudStrea
 
 ---
 
-### Kaedah 2: Guna Shortcode
+### Kaedah 2: Guna Shortcode / Short URL
 1. Buka **CloudStream** ➡️ **Settings** ➡️ **Extensions**.
 2. Tekan **Add Repository**.
-3. Masukkan **Shortcode** atau **Short URL**:
+3. Masukkan Short URL (tekan ikon salin di bawah):
    ```text
-   alyss
+   https://py.md/alyss
    ```
-   *(atau `https://py.md/alyss`)*
 4. Tekan **Add**.
 
 ---
@@ -41,7 +40,7 @@ https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.jso
 | Plugin / Provider | Package | Status | Supported Types |
 | :--- | :--- | :---: | :--- |
 | **Filmapik Provider** | `com.thealyss.cloudstream.filmapik` | 🟢 Active | Movies, TV Series, K-Drama, Anime |
-| **MovieBox Provider** | `com.thealyss.cloudstream.moviebox` | 🟢 Active | Movies, TV Series, K-Drama, C-Drama, Anime |
+| **MovieBox Provider** | `com.moviebox` | 🟢 Active | Movies, TV Series, K-Drama, C-Drama, Anime |
 
 ---
 
