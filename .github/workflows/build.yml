@@ -1,4 +1,4 @@
-name: Build Plugins
+﻿name: Build Plugins
 
 permissions:
   contents: write
@@ -44,6 +44,7 @@ jobs:
           chmod +x gradlew
           ./gradlew make makePluginsJson
           mkdir -p ../builds
+          cp repo.json ../builds/ 2>/dev/null || true
           cp build/*.cs3 ../builds/ 2>/dev/null || true
           cp */build/*.cs3 ../builds/ 2>/dev/null || true
           cp build/plugins.json ../builds/ 2>/dev/null || true
@@ -63,4 +64,4 @@ jobs:
           git push origin builds
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/plugins.json" || true
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/FilmapikProvider.cs3" || true
-          curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/AlyssTestProvider.cs3" || true
+          curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/MovieboxProvider.cs3" || true

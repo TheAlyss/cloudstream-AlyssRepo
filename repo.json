@@ -1,5 +1,6 @@
-{
-  "name": "TheAlyss CloudStream Repository",
+﻿{
+  "name": "TheAlyss Repo",
+  "iconUrl": "https://avatars.githubusercontent.com/TheAlyss?size=512",
   "description": "Official CloudStream plugin repository for TheAlyss",
   "manifestVersion": 1,
   "pluginLists": [
