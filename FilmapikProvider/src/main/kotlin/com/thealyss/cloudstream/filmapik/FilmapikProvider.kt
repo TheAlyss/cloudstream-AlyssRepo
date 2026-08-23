@@ -101,10 +101,10 @@ class FilmapikProvider : MainAPI() {
                     roleString = role
                 )
             } else null
-        }.distinctBy { it.actor.name }
+        }.distinctBy { it.actor }
 
-        val rating = document.selectFirst(".badge-yellow, .badge-cyan, .rating, span[itemprop='ratingValue']")?.text()
-            ?.let { Regex("""(\d+(?:\.\d+)?)""").find(it)?.groupValues?.get(1)?.toDoubleOrNull() }
+        val ratingText = document.selectFirst(".badge-yellow, .badge-cyan, .rating, span[itemprop='ratingValue']")?.text()
+        val ratingInt = ratingText?.let { Regex("""(\d+)""").find(it)?.groupValues?.get(1)?.toIntOrNull() }
 
         val trailerUrl = document.selectFirst("iframe[src*='youtube.com'], a[href*='youtube.com']")?.attr("src")?.ifBlank { null }
             ?: document.selectFirst("a[href*='youtube.com']")?.attr("href")
@@ -159,9 +159,7 @@ class FilmapikProvider : MainAPI() {
                                     this.episode = epNum
                                     this.posterUrl = backdropUrl ?: posterUrl
                                     this.description = plot
-                                    if (rating != null) {
-                                        this.score = Score.from10(rating)
-                                    }
+                                    this.rating = ratingInt
                                 }
                             )
                         }
@@ -207,9 +205,7 @@ class FilmapikProvider : MainAPI() {
                                 this.episode = epNum
                                 this.posterUrl = backdropUrl ?: posterUrl
                                 this.description = plot
-                                if (rating != null) {
-                                    this.score = Score.from10(rating)
-                                }
+                                this.rating = ratingInt
                             }
                         )
                     }
@@ -227,10 +223,8 @@ class FilmapikProvider : MainAPI() {
                 this.year = year
                 this.tags = genres
                 this.actors = actors
-                if (rating != null) {
-                    this.score = Score.from10(rating)
-                }
-                addTrailer(trailerUrl)
+                this.score = Score.from10(ratingInt)
+                trailerUrl?.let { addTrailer(it, addRaw = true) }
             }
         }
 
@@ -241,10 +235,8 @@ class FilmapikProvider : MainAPI() {
             this.year = year
             this.tags = genres
             this.actors = actors
-            if (rating != null) {
-                this.score = Score.from10(rating)
-            }
-            addTrailer(trailerUrl)
+            this.score = Score.from10(ratingInt)
+            trailerUrl?.let { addTrailer(it, addRaw = true) }
         }
     }
 
