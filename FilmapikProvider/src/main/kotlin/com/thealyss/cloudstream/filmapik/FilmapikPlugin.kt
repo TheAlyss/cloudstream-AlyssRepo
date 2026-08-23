@@ -23,23 +23,17 @@ class FilmapikPlugin : Plugin() {
         registerExtractorAPI(EfekStreamMain())
 
         // StreamWish Mirrors
+        registerExtractorAPI(CustomStreamWish())
         registerExtractorAPI(AwishPro())
         registerExtractorAPI(MwishPro())
         registerExtractorAPI(FlaswishCom())
         registerExtractorAPI(WishembedPro())
-        registerExtractorAPI(EmbedwishCom())
-        registerExtractorAPI(SfastwishCom())
 
         // DoodStream Mirrors
+        registerExtractorAPI(CustomDoodStream())
         registerExtractorAPI(D000dCom())
         registerExtractorAPI(D0000dCom())
         registerExtractorAPI(Ds2playCom())
-
-        // FileLions Mirrors
-        registerExtractorAPI(FilelionsOnline())
-        registerExtractorAPI(FilelionsSite())
-        registerExtractorAPI(LionplayNet())
-        registerExtractorAPI(FdewsdcOrg())
 
         // Abyss / Hydrax
         registerExtractorAPI(AbyssPlayer())
