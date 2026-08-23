@@ -127,7 +127,7 @@ class FilmapikProvider : MainAPI() {
                             val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
                             val rawEpText = epLink.text().trim()
 
-                            val seasonFromText = Regex("""(?i)S(\d+)\s*[:\sE]*\s*E?(\d+)""").find(rawEpText)
+                            val seasonFromText = Regex("""(?i)S(\d+)\s*[E\s:]*\s*(\d+)""").find(rawEpText)
                             val seasonFromUrl = Regex("""(?i)season-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
 
                             val seasonNum = seasonFromText?.groupValues?.get(1)?.toIntOrNull()
@@ -141,10 +141,10 @@ class FilmapikProvider : MainAPI() {
                                 ?: 1
 
                             val cleanTitle = rawEpText
-                                .replace(Regex("(?i)^Nonton\\s+(?:Film|Series|Drama)?\\s*"), "")
-                                .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia.*$"), "")
-                                .replace(Regex("(?i)^S\\d+\\s*[:\\sE]*\\s*E?\\d+\\s*[-:]?\\s*"), "")
-                                .replace(Regex("(?i)^(?:EP|Episode)\\s*\\d+\\s*[-:]?\\s*"), "")
+                                .replace(Regex("""(?i)^Nonton\s+(?:Film|Series|Drama)?\s*"""), "")
+                                .replace(Regex("""(?i)\s+Subtitle\s+Indonesia.*$"""), "")
+                                .replace(Regex("""(?i)^S\d+\s*[E\s:]*\s*E?\d+\s*[\s:-]*"""), "")
+                                .replace(Regex("""(?i)^(?:EP|Episode)\s*\d+\s*[\s:-]*"""), "")
                                 .trim()
 
                             val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
@@ -172,7 +172,7 @@ class FilmapikProvider : MainAPI() {
                         val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
                         val rawEpText = epLink.text().trim()
 
-                        val seasonFromText = Regex("""(?i)S(\d+)\s*[:\sE]*\s*E?(\d+)""").find(rawEpText)
+                        val seasonFromText = Regex("""(?i)S(\d+)\s*[E\s:]*\s*(\d+)""").find(rawEpText)
                         val seasonFromUrl = Regex("""(?i)season-(\d+)""").find(epHref)?.groupValues?.get(1)?.toIntOrNull()
 
                         val seasonNum = seasonFromText?.groupValues?.get(1)?.toIntOrNull()
@@ -186,10 +186,10 @@ class FilmapikProvider : MainAPI() {
                             ?: 1
 
                         val cleanTitle = rawEpText
-                            .replace(Regex("(?i)^Nonton\\s+(?:Film|Series|Drama)?\\s*"), "")
-                            .replace(Regex("(?i)\\s+Subtitle\\s+Indonesia.*$"), "")
-                            .replace(Regex("(?i)^S\\d+\\s*[:\\sE]*\\s*E?\\d+\\s*[-:]?\\s*"), "")
-                            .replace(Regex("(?i)^(?:EP|Episode)\\s*\\d+\\s*[-:]?\\s*"), "")
+                            .replace(Regex("""(?i)^Nonton\s+(?:Film|Series|Drama)?\s*"""), "")
+                            .replace(Regex("""(?i)\s+Subtitle\s+Indonesia.*$"""), "")
+                            .replace(Regex("""(?i)^S\d+\s*[E\s:]*\s*E?\d+\s*[\s:-]*"""), "")
+                            .replace(Regex("""(?i)^(?:EP|Episode)\s*\d+\s*[\s:-]*"""), "")
                             .trim()
 
                         val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
