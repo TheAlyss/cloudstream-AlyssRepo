@@ -1,5 +1,5 @@
 ﻿android {
-    namespace = "com.thealyss.cloudstream.moviebox"
+    namespace = "com.moviebox"
 }
 
 dependencies {
@@ -10,14 +10,19 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
 }
 
-version = 1
+version = 2
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")
-    description = "Nonton Movie, Drama & Series dari MovieBox"
+    description = "MovieBox - Streaming Movie Subtitle Indonesia"
     authors = listOf("TheAlyss")
     language = "id"
     status = 1
-    tvTypes = listOf("Movie", "TvSeries", "AsianDrama", "Anime")
-    iconUrl = "https://moviebox.ph/favicon.ico"
+    tvTypes = listOf(
+        "TvSeries",
+        "Movie",
+        "Anime",
+        "AsianDrama",
+    )
+    iconUrl = "https://movieboxph.app/wp-content/uploads/2025/11/Movie-Box-icon.webp"
 }

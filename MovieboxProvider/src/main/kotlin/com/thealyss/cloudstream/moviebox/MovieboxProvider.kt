@@ -1,4 +1,4 @@
-﻿package com.thealyss.cloudstream.moviebox
+﻿package com.moviebox
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
@@ -24,14 +24,6 @@ class MovieboxProvider : MainAPI() {
         TvType.TvSeries,
         TvType.Anime,
         TvType.AsianDrama
-    )
-
-    private val defaultHeaders = mapOf(
-        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        "Accept" to "application/json, text/plain, */*",
-        "Accept-Language" to "en-US,en;q=0.9,id;q=0.8",
-        "Origin" to "https://filmboom.top",
-        "Referer" to "https://filmboom.top/"
     )
 
     override val mainPage: List<MainPageData> = mainPageOf(
@@ -64,11 +56,13 @@ class MovieboxProvider : MainAPI() {
         page: Int,
         request: MainPageRequest,
     ): HomePageResponse {
+
         val home = mutableListOf<SearchResponse>()
 
-        if (!request.data.contains(",")) {
+        if(!request.data.contains(",")) {
             val url = "$mainAPIUrl/wefeed-h5api-bff/ranking-list/content?id=${request.data}&page=$page&perPage=12"
-            val index = app.get(url, headers = defaultHeaders).parsedSafe<Media>()?.data?.subjectList?.map {
+
+            val index = app.get(url).parsedSafe<Media>()?.data?.subjectList?.map {
                 it.toSearchResponse(this)
             } ?: throw ErrorLoadingException("No Data Found")
 
@@ -82,16 +76,14 @@ class MovieboxProvider : MainAPI() {
                 "sort" to params.last()
             ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
 
-            val index = app.post(
-                "$mainAPIUrl/wefeed-h5api-bff/subject/filter",
-                headers = defaultHeaders,
-                requestBody = body
-            ).parsedSafe<Media>()?.data?.items?.map {
-                it.toSearchResponse(this)
-            } ?: throw ErrorLoadingException("No Data Found")
+            val index = app.post("$mainAPIUrl/wefeed-h5api-bff/subject/filter", requestBody = body)
+                .parsedSafe<Media>()?.data?.items?.map {
+                    it.toSearchResponse(this)
+                } ?: throw ErrorLoadingException("No Data Found")
 
             home.addAll(index)
         }
+
 
         return newHomePageResponse(request.name, home)
     }
@@ -99,43 +91,21 @@ class MovieboxProvider : MainAPI() {
     override suspend fun quickSearch(query: String): List<SearchResponse> = search(query)
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val searchHeaders = mapOf(
-            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-            "Accept" to "application/json, text/plain, */*",
-            "Origin" to secondAPIUrl,
-            "Referer" to "$secondAPIUrl/"
-        )
-
-        val requestBody = mapOf(
-            "keyword" to query,
-            "page" to "1",
-            "perPage" to "20",
-            "subjectType" to "0"
-        ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
-
-        return try {
-            val res = app.post(
-                "$secondAPIUrl/wefeed-h5-bff/web/subject/search",
-                headers = searchHeaders,
-                requestBody = requestBody
-            ).parsedSafe<Media>()
-
-            res?.data?.items?.map {
-                it.toSearchResponse(this)
-            } ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        return app.post(
+            "$secondAPIUrl/wefeed-h5-bff/web/subject/search", requestBody = mapOf(
+                "keyword" to query,
+                "page" to "1",
+                "perPage" to "0",
+                "subjectType" to "0",
+            ).toJson().toRequestBody(RequestBodyTypes.JSON.toMediaTypeOrNull())
+        ).parsedSafe<Media>()?.data?.items?.map { it.toSearchResponse(this) }
+            ?: throw ErrorLoadingException()
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val id = url.substringAfter("id=").substringBefore("&")
-
-        val document = app.get(
-            "$mainAPIUrl/wefeed-h5api-bff/subject/detail?id=$id",
-            headers = defaultHeaders
-        ).parsedSafe<MediaDetail>()?.data
-
+        val id = url.substringAfterLast("/")
+        val document = app.get("$secondAPIUrl/wefeed-h5-bff/web/subject/detail?subjectId=$id")
+            .parsedSafe<MediaDetail>()?.data
         val subject = document?.subject
         val title = subject?.title ?: ""
         val poster = subject?.cover?.url
@@ -157,32 +127,29 @@ class MovieboxProvider : MainAPI() {
         }?.distinctBy { it.actor }
 
         val recommendations =
-            app.get(
-                "$mainUrl/wefeed-h5-bff/web/subject/detail-rec?subjectId=$id&page=1&perPage=12",
-                headers = defaultHeaders
-            ).parsedSafe<Media>()?.data?.items?.map {
-                it.toSearchResponse(this)
-            }
+            app.get("$mainUrl/wefeed-h5-bff/web/subject/detail-rec?subjectId=$id&page=1&perPage=12")
+                .parsedSafe<Media>()?.data?.items?.map {
+                    it.toSearchResponse(this)
+                }
 
         return if (tvType == TvType.TvSeries) {
             val episode = document?.resource?.seasons?.map { seasons ->
-                (if (seasons.allEp.isNullOrEmpty()) (1..(seasons.maxEp ?: 1)) else seasons.allEp.split(",")
-                    .mapNotNull { it.trim().toIntOrNull() })
-                    .map { ep ->
+                (if (seasons.allEp.isNullOrEmpty()) (1..seasons.maxEp!!) else seasons.allEp.split(",")
+                    .map { it.toInt() })
+                    .map { episode ->
                         newEpisode(
                             LoadData(
                                 id,
                                 seasons.se,
-                                ep,
+                                episode,
                                 subject?.detailPath
                             ).toJson()
                         ) {
                             this.season = seasons.se
-                            this.episode = ep
+                            this.episode = episode
                         }
                     }
             }?.flatten() ?: emptyList()
-
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episode) {
                 this.posterUrl = poster
                 this.year = year
@@ -218,56 +185,42 @@ class MovieboxProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+
         val media = parseJson<LoadData>(data)
         val referer = "$secondAPIUrl/spa/videoPlayPage/movies/${media.detailPath}?id=${media.id}&type=/movie/detail&lang=en"
 
-        val playHeaders = defaultHeaders.toMutableMap().apply {
-            put("Referer", referer)
-        }
-
         val streams = app.get(
             "$secondAPIUrl/wefeed-h5-bff/web/subject/play?subjectId=${media.id}&se=${media.season ?: 0}&ep=${media.episode ?: 0}",
-            headers = playHeaders,
             referer = referer
         ).parsedSafe<Media>()?.data?.streams
 
-        streams?.reversed()?.distinctBy { it.url }?.forEach { source ->
-            val streamUrl = source.url ?: return@forEach
+        streams?.reversed()?.distinctBy { it.url }?.map { source ->
             callback.invoke(
                 newExtractorLink(
                     this.name,
                     this.name,
-                    streamUrl,
+                    source.url ?: return@map,
                     INFER_TYPE
                 ) {
                     this.referer = "$secondAPIUrl/"
                     this.quality = getQualityFromName(source.resolutions)
-                    this.headers = mapOf(
-                        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-                        "Referer" to "$secondAPIUrl/"
-                    )
                 }
             )
         }
 
-        val firstStream = streams?.firstOrNull()
-        if (firstStream != null) {
-            val id = firstStream.id
-            val format = firstStream.format
+        val id = streams?.first()?.id
+        val format = streams?.first()?.format
 
-            app.get(
-                "$secondAPIUrl/wefeed-h5-bff/web/subject/caption?format=$format&id=$id&subjectId=${media.id}",
-                headers = playHeaders,
-                referer = referer
-            ).parsedSafe<Media>()?.data?.captions?.forEach { subtitle ->
-                val subUrl = subtitle.url ?: return@forEach
-                subtitleCallback.invoke(
-                    newSubtitleFile(
-                        subtitle.lanName ?: subtitle.lan ?: "Subtitle",
-                        subUrl
-                    )
+        app.get(
+            "$secondAPIUrl/wefeed-h5-bff/web/subject/caption?format=$format&id=$id&subjectId=${media.id}",
+            referer = referer
+        ).parsedSafe<Media>()?.data?.captions?.map { subtitle ->
+            subtitleCallback.invoke(
+                newSubtitleFile(
+                    subtitle.lanName ?: "",
+                    subtitle.url ?: return@map
                 )
-            }
+            )
         }
 
         return true
@@ -368,4 +321,5 @@ class MovieboxProvider : MainAPI() {
             )
         }
     }
+
 }
