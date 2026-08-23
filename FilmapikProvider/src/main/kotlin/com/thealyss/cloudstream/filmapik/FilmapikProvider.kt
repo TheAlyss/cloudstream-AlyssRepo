@@ -91,6 +91,24 @@ class FilmapikProvider : MainAPI() {
         val year = yearText?.let { Regex("(\\d{4})").find(it)?.groupValues?.get(1)?.toIntOrNull() }
         val genres = document.select("a[href*='/category/']").map { it.text() }
 
+        val actors = document.select("div.cast a, a[href*='/cast/'], a[href*='/actor/'], div.actor-item, div.famv-actor a, a[href*='/director/']").mapNotNull { actorElem ->
+            val actorName = actorElem.selectFirst("span, .name, h4")?.text()?.ifBlank { null } ?: actorElem.text().trim()
+            val actorImg = actorElem.selectFirst("img")?.attr("src")
+            val role = actorElem.selectFirst(".character, .role, p")?.text()
+            if (actorName.isNotBlank() && !actorName.contains("Cast", ignoreCase = true) && !actorName.contains("Director", ignoreCase = true)) {
+                ActorData(
+                    Actor(actorName, actorImg),
+                    roleString = role
+                )
+            } else null
+        }.distinctBy { it.actor.name }
+
+        val rating = document.selectFirst(".badge-yellow, .badge-cyan, .rating, span[itemprop='ratingValue']")?.text()
+            ?.let { Regex("""(\d+(?:\.\d+)?)""").find(it)?.groupValues?.get(1)?.toDoubleOrNull() }
+
+        val trailerUrl = document.selectFirst("iframe[src*='youtube.com'], a[href*='youtube.com']")?.attr("src")?.ifBlank { null }
+            ?: document.selectFirst("a[href*='youtube.com']")?.attr("href")
+
         val playUrl = if (url.endsWith("/play/")) url else "${url.removeSuffix("/")}/play/"
 
         val isTvShow = url.contains("/tvshows/") || url.contains("/tvshows-genre/") || url.contains("/series/") || url.contains("/season/")
@@ -139,6 +157,11 @@ class FilmapikProvider : MainAPI() {
                                     this.name = displayName
                                     this.season = seasonNum
                                     this.episode = epNum
+                                    this.posterUrl = backdropUrl ?: posterUrl
+                                    this.description = plot
+                                    if (rating != null) {
+                                        this.score = Score.from10(rating)
+                                    }
                                 }
                             )
                         }
@@ -182,6 +205,11 @@ class FilmapikProvider : MainAPI() {
                                 this.name = displayName
                                 this.season = seasonNum
                                 this.episode = epNum
+                                this.posterUrl = backdropUrl ?: posterUrl
+                                this.description = plot
+                                if (rating != null) {
+                                    this.score = Score.from10(rating)
+                                }
                             }
                         )
                     }
@@ -198,6 +226,11 @@ class FilmapikProvider : MainAPI() {
                 this.plot = plot
                 this.year = year
                 this.tags = genres
+                this.actors = actors
+                if (rating != null) {
+                    this.score = Score.from10(rating)
+                }
+                addTrailer(trailerUrl)
             }
         }
 
@@ -207,6 +240,11 @@ class FilmapikProvider : MainAPI() {
             this.plot = plot
             this.year = year
             this.tags = genres
+            this.actors = actors
+            if (rating != null) {
+                this.score = Score.from10(rating)
+            }
+            addTrailer(trailerUrl)
         }
     }
 
