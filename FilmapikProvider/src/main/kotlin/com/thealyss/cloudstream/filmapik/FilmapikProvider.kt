@@ -160,7 +160,6 @@ class FilmapikProvider : MainAPI() {
                                     this.episode = epNum
                                     this.posterUrl = backdropUrl ?: posterUrl
                                     this.description = plot
-                                    this.rating = ratingInt
                                 }
                             )
                         }
@@ -206,7 +205,6 @@ class FilmapikProvider : MainAPI() {
                                 this.episode = epNum
                                 this.posterUrl = backdropUrl ?: posterUrl
                                 this.description = plot
-                                this.rating = ratingInt
                             }
                         )
                     }
