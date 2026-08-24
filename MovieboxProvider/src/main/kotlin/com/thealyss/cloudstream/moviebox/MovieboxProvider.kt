@@ -32,7 +32,6 @@ class MovieboxProvider : MainAPI() {
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
-        TvType.Anime,
         TvType.AsianDrama
     )
 
@@ -86,6 +85,12 @@ class MovieboxProvider : MainAPI() {
         return nsfwBlacklist.any { keyword ->
             combinedText.contains(keyword)
         }
+    }
+
+    private fun isAnimeOrAnimation(subjectType: Int?, tags: List<String>?): Boolean {
+        if (subjectType == 1006) return true
+        if (!tags.isNullOrEmpty() && tags.any { it.equals("Anime", ignoreCase = true) || it.equals("Animation", ignoreCase = true) }) return true
+        return false
     }
 
     private fun md5(input: ByteArray): String =
@@ -206,6 +211,7 @@ class MovieboxProvider : MainAPI() {
         }
     }
 
+    // Curated Main Page with Anime categories completely removed
     override val mainPage: List<MainPageData> = mainPageOf(
         "872031290915189720" to "Trending Now",
         "997144265920760504" to "Popular Movie",
@@ -214,10 +220,8 @@ class MovieboxProvider : MainAPI() {
         "4380734070238626200" to "K-Drama",
         "7736026911486755336" to "Western TV",
         "8624142774394406504" to "Most Popular C-Drama",
-        "5404290953194750296" to "Trending Anime",
         "5848753831881965888" to "Indonesian Horror Stories",
         "1164329479448281992" to "Thai-Drama",
-        "7132534597631837112" to "Animated Film",
         "1,ForYou" to "Movie ForYou",
         "1,Hottest" to "Movie Hottest",
         "1,Latest" to "Movie Latest",
@@ -226,10 +230,6 @@ class MovieboxProvider : MainAPI() {
         "2,Hottest" to "TVShow Hottest",
         "2,Latest" to "TVShow Latest",
         "2,Rating" to "TVShow Rating",
-        "1006,ForYou" to "Animation ForYou",
-        "1006,Hottest" to "Animation Hottest",
-        "1006,Latest" to "Animation Latest",
-        "1006,Rating" to "Animation Rating",
     )
 
     override suspend fun getMainPage(
@@ -241,7 +241,8 @@ class MovieboxProvider : MainAPI() {
         if (!request.data.contains(",")) {
             val url = "$mainAPIUrl/wefeed-h5api-bff/ranking-list/content?id=${request.data}&page=$page&perPage=12"
             val index = app.get(url).parsedSafe<Media>()?.data?.subjectList?.mapNotNull { item ->
-                if (isNsfw(title = item.title, description = item.description, tags = item.genre?.split(",")?.map { it.trim() })) null
+                val tags = item.genre?.split(",")?.map { it.trim() }
+                if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags)) null
                 else item.toSearchResponse(this)
             } ?: emptyList()
 
@@ -257,7 +258,8 @@ class MovieboxProvider : MainAPI() {
 
             val index = app.post("$mainAPIUrl/wefeed-h5api-bff/subject/filter", requestBody = body)
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
-                    if (isNsfw(title = item.title, description = item.description, tags = item.genre?.split(",")?.map { it.trim() })) null
+                    val tags = item.genre?.split(",")?.map { it.trim() }
+                    if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags)) null
                     else item.toSearchResponse(this)
                 } ?: emptyList()
 
@@ -320,14 +322,14 @@ class MovieboxProvider : MainAPI() {
                     val cover = subjectItem.get("cover")?.get("url")?.asText()
                     val subjectType = subjectItem.get("subjectType")?.asInt() ?: 1
                     val isAdult = subjectItem.get("isAdult")?.asBoolean() ?: false
-                    
+
                     val tags = mutableListOf<String>()
                     subjectItem.get("genres")?.forEach { tags.add(it.asText()) }
                     subjectItem.get("tags")?.forEach { tags.add(it.asText()) }
                     subjectItem.get("genre")?.asText()?.split(",")?.map { it.trim() }?.let { tags.addAll(it) }
 
-                    // Comprehensive permanent 18+ filter
-                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify)) return@forEach
+                    // Comprehensive permanent 18+ & Anime removal from MovieBox
+                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify) || isAnimeOrAnimation(subjectType, tags)) return@forEach
 
                     val tvType = if (subjectType == 2) TvType.TvSeries else TvType.Movie
                     results.add(
@@ -380,7 +382,8 @@ class MovieboxProvider : MainAPI() {
         val recommendations =
             app.get("$mainUrl/wefeed-h5-bff/web/subject/detail-rec?subjectId=$id&page=1&perPage=12")
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
-                    if (isNsfw(title = item.title, description = item.description, tags = item.genre?.split(",")?.map { it.trim() })) null
+                    val itemTags = item.genre?.split(",")?.map { it.trim() }
+                    if (isNsfw(title = item.title, description = item.description, tags = itemTags) || isAnimeOrAnimation(item.subjectType, itemTags)) null
                     else item.toSearchResponse(this)
                 }
 

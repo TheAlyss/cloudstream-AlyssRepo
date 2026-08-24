@@ -10,7 +10,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
 }
 
-version = 4
+version = 5
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")
@@ -21,7 +21,6 @@ cloudstream {
     tvTypes = listOf(
         "TvSeries",
         "Movie",
-        "Anime",
         "AsianDrama",
     )
     iconUrl = "https://movieboxph.app/wp-content/uploads/2025/11/Movie-Box-icon.webp"

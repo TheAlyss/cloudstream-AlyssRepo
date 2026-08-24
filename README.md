@@ -1,4 +1,4 @@
-﻿# 🌟 TheAlyss CloudStream Repository
+# 🌟 TheAlyss CloudStream Repository
 
 [![Build Plugins](https://github.com/TheAlyss/cloudstream-AlyssRepo/actions/workflows/build.yml/badge.svg)](https://github.com/TheAlyss/cloudstream-AlyssRepo/actions/workflows/build.yml)
 ![CloudStream](https://img.shields.io/badge/CloudStream-v3.0+-blue.svg)
@@ -40,7 +40,7 @@ https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.jso
 | No. | Extension | Status | Content Type |
 | :---: | :--- | :---: | :--- |
 | 1 | **Filmapik** | 🟢 Active | 🎬 Movies & 📺 TV Series & 🎭 Asian Drama & 🌸 Anime |
-| 2 | **MovieBox** | 🟢 Active | 🎬 Movies & 📺 TV Series & 🎭 Asian Drama & 🌸 Anime |
+| 2 | **MovieBox** | 🟢 Active | 🎬 Movies & 📺 TV Series & 🎭 Asian Drama |
 
 ---
 
