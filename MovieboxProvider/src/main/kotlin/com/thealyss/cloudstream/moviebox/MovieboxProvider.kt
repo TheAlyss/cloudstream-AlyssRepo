@@ -15,6 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -49,18 +50,42 @@ class MovieboxProvider : MainAPI() {
         "Realme" to listOf("RMX3085", "RMX3360", "RMX3551")
     )
 
-    // Permanent 18+ / NSFW Filter Blacklist
+    // Comprehensive Permanent 18+ / Adult / NSFW Blacklist
     private val nsfwBlacklist = listOf(
         "hentai", "jav", "uncensored", "r18", "adult", "porn", "xxx",
         "erotica", "erotic", "nsfw", "18+", "nudity", "sensual", "lust",
-        "ecchi", "sex", "sexuality", "strip", "stripper", "fetish", "smut"
+        "ecchi", "sex", "sexy", "sexuality", "strip", "stripper", "fetish", "smut",
+        "anal", "fuck", "fucking", "gay", "lesbian", "blowjob", "creampie",
+        "milf", "boobs", "tits", "pussy", "dick", "cock", "vagina", "cum",
+        "orgasm", "masturbat", "threesome", "gangbang", "bdsm", "hardcore",
+        "softcore", "nude", "naked", "topless", "bitch", "horny", "slut", "whore",
+        "incest", "taboo", "interracial", "camgirl", "cam4", "onlyfans",
+        "brazzers", "xvideos", "pornhub", "redtube", "xhamster", "youporn",
+        "xrated", "x-rated", "mature 17+", "mature", "ero", "yaoi", "yuri",
+        "doujin", "doujinshi", "hentaivn", "hanime", "deepthroat", "squirting"
     )
 
-    private fun isNsfw(title: String?, tags: List<String>? = null, isAdult: Boolean? = null): Boolean {
+    private fun isNsfw(
+        title: String? = null,
+        description: String? = null,
+        tags: List<String>? = null,
+        isAdult: Boolean? = null,
+        classify: String? = null
+    ): Boolean {
         if (isAdult == true) return true
-        if (!title.isNullOrBlank() && nsfwBlacklist.any { title.contains(it, ignoreCase = true) }) return true
-        if (!tags.isNullOrEmpty() && tags.any { tag -> nsfwBlacklist.any { tag.contains(it, ignoreCase = true) } }) return true
-        return false
+
+        val combinedText = buildString {
+            if (!title.isNullOrBlank()) append(title).append(" ")
+            if (!description.isNullOrBlank()) append(description).append(" ")
+            if (!classify.isNullOrBlank()) append(classify).append(" ")
+            if (!tags.isNullOrEmpty()) append(tags.joinToString(" ")).append(" ")
+        }.lowercase(Locale.ROOT)
+
+        if (combinedText.isBlank()) return false
+
+        return nsfwBlacklist.any { keyword ->
+            combinedText.contains(keyword)
+        }
     }
 
     private fun md5(input: ByteArray): String =
@@ -216,7 +241,7 @@ class MovieboxProvider : MainAPI() {
         if (!request.data.contains(",")) {
             val url = "$mainAPIUrl/wefeed-h5api-bff/ranking-list/content?id=${request.data}&page=$page&perPage=12"
             val index = app.get(url).parsedSafe<Media>()?.data?.subjectList?.mapNotNull { item ->
-                if (isNsfw(item.title, item.genre?.split(",")?.map { it.trim() })) null
+                if (isNsfw(title = item.title, description = item.description, tags = item.genre?.split(",")?.map { it.trim() })) null
                 else item.toSearchResponse(this)
             } ?: emptyList()
 
@@ -232,7 +257,7 @@ class MovieboxProvider : MainAPI() {
 
             val index = app.post("$mainAPIUrl/wefeed-h5api-bff/subject/filter", requestBody = body)
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
-                    if (isNsfw(item.title, item.genre?.split(",")?.map { it.trim() })) null
+                    if (isNsfw(title = item.title, description = item.description, tags = item.genre?.split(",")?.map { it.trim() })) null
                     else item.toSearchResponse(this)
                 } ?: emptyList()
 
@@ -245,7 +270,7 @@ class MovieboxProvider : MainAPI() {
     override suspend fun quickSearch(query: String): List<SearchResponse> = search(query)
 
     override suspend fun search(query: String): List<SearchResponse> {
-        if (isNsfw(query)) return emptyList()
+        if (isNsfw(title = query)) return emptyList()
 
         val url = "$mobileAPIUrl/wefeed-mobile-bff/subject-api/search/v2"
         val jsonBody = """{"page": 1, "perPage": 20, "keyword": "$query"}"""
@@ -289,14 +314,20 @@ class MovieboxProvider : MainAPI() {
             searchResults?.forEach { resultItem ->
                 resultItem.get("subjects")?.forEach { subjectItem ->
                     val title = subjectItem.get("title")?.asText() ?: return@forEach
+                    val desc = subjectItem.get("description")?.asText() ?: subjectItem.get("overview")?.asText()
+                    val classify = subjectItem.get("classify")?.asText()
                     val id = subjectItem.get("subjectId")?.asText() ?: return@forEach
                     val cover = subjectItem.get("cover")?.get("url")?.asText()
                     val subjectType = subjectItem.get("subjectType")?.asInt() ?: 1
                     val isAdult = subjectItem.get("isAdult")?.asBoolean() ?: false
-                    val tags = subjectItem.get("genres")?.mapNotNull { it.asText() } ?: emptyList()
+                    
+                    val tags = mutableListOf<String>()
+                    subjectItem.get("genres")?.forEach { tags.add(it.asText()) }
+                    subjectItem.get("tags")?.forEach { tags.add(it.asText()) }
+                    subjectItem.get("genre")?.asText()?.split(",")?.map { it.trim() }?.let { tags.addAll(it) }
 
-                    // Permanent 18+ filter
-                    if (isNsfw(title, tags, isAdult)) return@forEach
+                    // Comprehensive permanent 18+ filter
+                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify)) return@forEach
 
                     val tvType = if (subjectType == 2) TvType.TvSeries else TvType.Movie
                     results.add(
@@ -325,10 +356,15 @@ class MovieboxProvider : MainAPI() {
         val title = subject?.title ?: ""
         val poster = subject?.cover?.url
         val tags = subject?.genre?.split(",")?.map { it.trim() }
+        val description = subject?.description
+
+        // Strict filter on load
+        if (isNsfw(title = title, description = description, tags = tags)) {
+            throw ErrorLoadingException("Content filtered by SafeSearch (18+ / Adult content)")
+        }
 
         val year = subject?.releaseDate?.substringBefore("-")?.toIntOrNull()
         val tvType = if (subject?.subjectType == 2) TvType.TvSeries else TvType.Movie
-        val description = subject?.description
         val trailer = subject?.trailer?.videoAddress?.url
         val rating = subject?.imdbRatingValue?.toIntOrNull()
         val actors = document?.stars?.mapNotNull { cast ->
@@ -344,7 +380,7 @@ class MovieboxProvider : MainAPI() {
         val recommendations =
             app.get("$mainUrl/wefeed-h5-bff/web/subject/detail-rec?subjectId=$id&page=1&perPage=12")
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
-                    if (isNsfw(item.title, item.genre?.split(",")?.map { it.trim() })) null
+                    if (isNsfw(title = item.title, description = item.description, tags = item.genre?.split(",")?.map { it.trim() })) null
                     else item.toSearchResponse(this)
                 }
 
