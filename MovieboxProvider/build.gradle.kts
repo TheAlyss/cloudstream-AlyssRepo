@@ -10,7 +10,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
 }
 
-version = 5
+version = 6
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")

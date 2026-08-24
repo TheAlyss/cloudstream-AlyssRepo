@@ -64,6 +64,14 @@ class MovieboxProvider : MainAPI() {
         "doujin", "doujinshi", "hentaivn", "hanime", "deepthroat", "squirting"
     )
 
+    // Regional Dubbing Blacklist (filters out duplicate Hindi/Tamil/Telugu audio dubs)
+    private val dubBlacklist = listOf(
+        "(hindi)", "[hindi]", "hindi dub", "(tamil)", "[tamil]", "tamil dub",
+        "(telugu)", "[telugu]", "telugu dub", "(kannada)", "[kannada]",
+        "(malayalam)", "[malayalam]", "(bhojpuri)", "[bhojpuri]",
+        "(punjabi)", "[punjabi]", "(dual audio)", "[dual audio]"
+    )
+
     private fun isNsfw(
         title: String? = null,
         description: String? = null,
@@ -91,6 +99,12 @@ class MovieboxProvider : MainAPI() {
         if (subjectType == 1006) return true
         if (!tags.isNullOrEmpty() && tags.any { it.equals("Anime", ignoreCase = true) || it.equals("Animation", ignoreCase = true) }) return true
         return false
+    }
+
+    private fun isDubbedTitle(title: String?): Boolean {
+        if (title.isNullOrBlank()) return false
+        val lower = title.lowercase(Locale.ROOT)
+        return dubBlacklist.any { lower.contains(it) }
     }
 
     private fun md5(input: ByteArray): String =
@@ -211,7 +225,7 @@ class MovieboxProvider : MainAPI() {
         }
     }
 
-    // Curated Main Page with Anime categories completely removed
+    // Curated Main Page without Anime or Dubbed duplicates
     override val mainPage: List<MainPageData> = mainPageOf(
         "872031290915189720" to "Trending Now",
         "997144265920760504" to "Popular Movie",
@@ -242,7 +256,7 @@ class MovieboxProvider : MainAPI() {
             val url = "$mainAPIUrl/wefeed-h5api-bff/ranking-list/content?id=${request.data}&page=$page&perPage=12"
             val index = app.get(url).parsedSafe<Media>()?.data?.subjectList?.mapNotNull { item ->
                 val tags = item.genre?.split(",")?.map { it.trim() }
-                if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags)) null
+                if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags) || isDubbedTitle(item.title)) null
                 else item.toSearchResponse(this)
             } ?: emptyList()
 
@@ -259,7 +273,7 @@ class MovieboxProvider : MainAPI() {
             val index = app.post("$mainAPIUrl/wefeed-h5api-bff/subject/filter", requestBody = body)
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
                     val tags = item.genre?.split(",")?.map { it.trim() }
-                    if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags)) null
+                    if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags) || isDubbedTitle(item.title)) null
                     else item.toSearchResponse(this)
                 } ?: emptyList()
 
@@ -328,8 +342,8 @@ class MovieboxProvider : MainAPI() {
                     subjectItem.get("tags")?.forEach { tags.add(it.asText()) }
                     subjectItem.get("genre")?.asText()?.split(",")?.map { it.trim() }?.let { tags.addAll(it) }
 
-                    // Comprehensive permanent 18+ & Anime removal from MovieBox
-                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify) || isAnimeOrAnimation(subjectType, tags)) return@forEach
+                    // Comprehensive permanent 18+, Anime & Regional Dub removal from MovieBox
+                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify) || isAnimeOrAnimation(subjectType, tags) || isDubbedTitle(title)) return@forEach
 
                     val tvType = if (subjectType == 2) TvType.TvSeries else TvType.Movie
                     results.add(
@@ -383,7 +397,7 @@ class MovieboxProvider : MainAPI() {
             app.get("$mainUrl/wefeed-h5-bff/web/subject/detail-rec?subjectId=$id&page=1&perPage=12")
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
                     val itemTags = item.genre?.split(",")?.map { it.trim() }
-                    if (isNsfw(title = item.title, description = item.description, tags = itemTags) || isAnimeOrAnimation(item.subjectType, itemTags)) null
+                    if (isNsfw(title = item.title, description = item.description, tags = itemTags) || isAnimeOrAnimation(item.subjectType, itemTags) || isDubbedTitle(item.title)) null
                     else item.toSearchResponse(this)
                 }
 
