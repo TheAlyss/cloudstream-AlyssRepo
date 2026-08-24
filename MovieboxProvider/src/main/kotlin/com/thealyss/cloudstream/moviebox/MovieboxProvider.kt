@@ -49,19 +49,39 @@ class MovieboxProvider : MainAPI() {
         "Realme" to listOf("RMX3085", "RMX3360", "RMX3551")
     )
 
-    // Comprehensive Permanent 18+ / Adult / NSFW Blacklist
+    // Comprehensive Permanent 18+ / Adult / NSFW / BL Blacklist
     private val nsfwBlacklist = listOf(
-        "hentai", "jav", "uncensored", "r18", "adult", "porn", "xxx",
-        "erotica", "erotic", "nsfw", "18+", "nudity", "sensual", "lust",
-        "ecchi", "sex", "sexy", "sexuality", "strip", "stripper", "fetish", "smut",
-        "anal", "fuck", "fucking", "gay", "lesbian", "blowjob", "creampie",
-        "milf", "boobs", "tits", "pussy", "dick", "cock", "vagina", "cum",
-        "orgasm", "masturbat", "threesome", "gangbang", "bdsm", "hardcore",
-        "softcore", "nude", "naked", "topless", "bitch", "horny", "slut", "whore",
-        "incest", "taboo", "interracial", "camgirl", "cam4", "onlyfans",
-        "brazzers", "xvideos", "pornhub", "redtube", "xhamster", "youporn",
-        "xrated", "x-rated", "mature 17+", "mature", "ero", "yaoi", "yuri",
-        "doujin", "doujinshi", "hentaivn", "hanime", "deepthroat", "squirting"
+        // General / English 18+ & Porn
+        "hentai", "jav", "uncensored", "r18", "adult", "porn", "xxx", "xvideos", "pornhub",
+        "erotica", "erotic", "nsfw", "18+", "nudity", "sensual", "lust", "seduction",
+        "ecchi", "sex", "sexy", "sexuality", "sexual", "strip", "stripper", "fetish", "smut",
+        "anal", "fuck", "fucking", "gay", "lesbian", "blowjob", "creampie", "handjob",
+        "milf", "boobs", "tits", "pussy", "dick", "cock", "vagina", "cum", "ejaculat",
+        "orgasm", "masturbat", "threesome", "gangbang", "bdsm", "hardcore", "softcore",
+        "nude", "naked", "topless", "bottomless", "bitch", "horny", "slut", "whore",
+        "incest", "taboo", "interracial", "camgirl", "cam4", "onlyfans", "brazzers",
+        "redtube", "xhamster", "youporn", "xrated", "x-rated", "mature 17+", "mature",
+        "ero", "yaoi", "yuri", "doujin", "doujinshi", "hentaivn", "hanime", "deepthroat",
+        "squirting", "orgy", "swinger", "bondage", "dominatrix", "dildo", "vibrator",
+        "voyeur", "peeping", "nympho", "midnight", "playboy", "penthouse", "hustler",
+
+        // Boys Love / Girls Love & Related Themes
+        "boys love", "boys' love", "boy's love", "boyslove", "boylove", "bl story",
+        "bl series", "bl drama", "girls love", "girls' love", "girlslove", "girllove",
+        "gl series", "gl drama", "danmei", "fujoshi",
+
+        // Vivamax & Pinoy 18+ Erotic Movies
+        "vivamax", "viva max", "bomba", "bold movie", "hubad", "pantaxa", "palitan",
+        "scorpio nights", "silip", "haliparot", "tag-init",
+
+        // Indonesian / Malay 18+ terms
+        "bokep", "film panas", "cerita panas", "ngewe", "mesum", "porno", "cabul",
+        "bugil", "telanjang", "toket", "pepek", "kontol", "memek", "itil", "tetek",
+        "sange", "colmek", "coli",
+
+        // Korean / Japanese Erotic keywords
+        "young sister in law", "sister in law", "friend's mother", "female boarding house",
+        "delicious delivery", "secret tutor"
     )
 
     // Regional Dubbing Blacklist (filters out duplicate Hindi/Tamil/Telugu audio dubs)
@@ -342,7 +362,7 @@ class MovieboxProvider : MainAPI() {
                     subjectItem.get("tags")?.forEach { tags.add(it.asText()) }
                     subjectItem.get("genre")?.asText()?.split(",")?.map { it.trim() }?.let { tags.addAll(it) }
 
-                    // Comprehensive permanent 18+, Anime & Regional Dub removal from MovieBox
+                    // Comprehensive permanent 18+, Anime, BL & Regional Dub removal from MovieBox
                     if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify) || isAnimeOrAnimation(subjectType, tags) || isDubbedTitle(title)) return@forEach
 
                     val tvType = if (subjectType == 2) TvType.TvSeries else TvType.Movie
