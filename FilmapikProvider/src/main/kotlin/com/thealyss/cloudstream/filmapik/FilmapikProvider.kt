@@ -323,6 +323,80 @@ class FilmapikProvider : MainAPI() {
         }
     }
 
+    private suspend fun extractVipServer(
+        embedUrl: String,
+        playPageUrl: String,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        return try {
+            val uri = Uri.parse(embedUrl)
+            val host = uri.host ?: "v2.efek.stream"
+            val embedDoc = app.get(embedUrl, referer = playPageUrl).text
+            val unpacked = getAndUnpack(embedDoc)
+            if (unpacked.isBlank()) return false
+
+            val sourcesMatch = Regex("""sources\s*:\s*\[([\s\S]*?)\]""").find(unpacked)
+            val searchArea = sourcesMatch?.groupValues?.get(1) ?: unpacked
+
+            val blocks = searchArea.split(Regex("""\},?\s*\{"""))
+            var found = false
+
+            for (block in blocks) {
+                val fileMatch = Regex("""['"]?file['"]?\s*:\s*['"]([^'"]+)['"]""").find(block) ?: continue
+                val rawFile = fileMatch.groupValues[1].replace("\\/", "/")
+                val labelMatch = Regex("""['"]?label['"]?\s*:\s*['"]([^'"]+)['"]""").find(block)
+                val label = labelMatch?.groupValues?.get(1) ?: "VIP"
+
+                val fullFileUrl = if (rawFile.startsWith("http")) {
+                    rawFile
+                } else {
+                    "https://$host$rawFile"
+                }
+
+                // Pre-resolve 302 redirect so ExoPlayer connects directly to storage server (s1/s2/s3.efek.stream)
+                val directUrl = try {
+                    val headRes = app.get(
+                        fullFileUrl,
+                        headers = mapOf(
+                            "Referer" to embedUrl,
+                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        ),
+                        followRedirects = false
+                    )
+                    headRes.headers["location"] ?: fullFileUrl
+                } catch (e: Exception) {
+                    fullFileUrl
+                }
+
+                val directHost = Uri.parse(directUrl).host ?: host
+                val quality = getQualityFromName(label)
+
+                callback.invoke(
+                    newExtractorLink(
+                        "VIP Server",
+                        "VIP Server $label",
+                        directUrl,
+                        INFER_TYPE
+                    ) {
+                        this.referer = "https://$directHost/"
+                        this.headers = mapOf(
+                            "Referer" to "https://$directHost/",
+                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                            "Accept" to "*/*",
+                            "Connection" to "keep-alive"
+                        )
+                        this.quality = quality
+                    }
+                )
+                found = true
+            }
+            found
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     override suspend fun loadLinks(
         dataUrl: String,
         isCasting: Boolean,
@@ -379,37 +453,8 @@ class FilmapikProvider : MainAPI() {
                         linksFound = true
                     }
                 } else if (embedUrl.contains("efek.stream") || serverName.contains("VIP", ignoreCase = true)) {
-                    val embedDoc = app.get(embedUrl, referer = playPageUrl).text
-                    val unpacked = getAndUnpack(embedDoc)
-                    val sourcesMatch = Regex("""sources:\s*(\[.*?\])""").find(unpacked)
-                    if (sourcesMatch != null) {
-                        val jsonArr = JSONArray(sourcesMatch.groupValues[1])
-                        for (i in 0 until jsonArr.length()) {
-                            val srcObj = jsonArr.getJSONObject(i)
-                            val file = srcObj.optString("file")
-                            val label = srcObj.optString("label", "VIP")
-                            if (file.isNotBlank()) {
-                                val fullFileUrl = if (file.startsWith("http")) file else "https://v2.efek.stream$file"
-                                val quality = getQualityFromName(label)
-                                callback.invoke(
-                                    newExtractorLink(
-                                        "VIP Server",
-                                        "VIP Server $label",
-                                        fullFileUrl,
-                                        INFER_TYPE
-                                    ) {
-                                        this.referer = "https://v2.efek.stream/"
-                                        this.headers = mapOf(
-                                            "Referer" to "https://v2.efek.stream/",
-                                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                                            "Accept" to "*/*"
-                                        )
-                                        this.quality = quality
-                                    }
-                                )
-                                linksFound = true
-                            }
-                        }
+                    if (extractVipServer(embedUrl, playPageUrl, callback)) {
+                        linksFound = true
                     }
                 } else {
                     if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
