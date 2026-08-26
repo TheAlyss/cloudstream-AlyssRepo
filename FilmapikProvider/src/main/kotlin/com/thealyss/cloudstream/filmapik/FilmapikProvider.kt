@@ -1,11 +1,17 @@
-package com.thealyss.cloudstream.filmapik
+﻿package com.thealyss.cloudstream.filmapik
 
+import android.net.Uri
+import android.util.Base64
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.utils.*
-import org.jsoup.nodes.Element
 import org.json.JSONArray
+import org.json.JSONObject
+import org.jsoup.nodes.Element
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 @Suppress("DEPRECATION")
 class FilmapikProvider : MainAPI() {
@@ -110,7 +116,7 @@ class FilmapikProvider : MainAPI() {
         val trailerUrl = document.selectFirst("iframe[src*='youtube.com'], a[href*='youtube.com']")?.attr("src")?.ifBlank { null }
             ?: document.selectFirst("a[href*='youtube.com']")?.attr("href")
 
-        val playUrl = if (url.endsWith("/play/")) url else "${url.removeSuffix("/")}/play/"
+        val playUrl = if (url.endsWith("/play")) url else if (url.endsWith("/play/")) url.removeSuffix("/") else "${url.removeSuffix("/")}/play"
 
         val isTvShow = url.contains("/tvshows/") || url.contains("/tvshows-genre/") || url.contains("/series/") || url.contains("/season/")
 
@@ -124,7 +130,7 @@ class FilmapikProvider : MainAPI() {
                     seasonContainer.select("a.famv-episode-btn, a[href*='/episodes/'], a[href*='/episode/']").forEach { epLink ->
                         val epHref = epLink.attr("href")
                         if (epHref.isNotBlank() && epHref != "#") {
-                            val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
+                            val epPlayUrl = if (epHref.endsWith("/play")) epHref else if (epHref.endsWith("/play/")) epHref.removeSuffix("/") else "${epHref.removeSuffix("/")}/play"
                             val rawEpText = epLink.text().trim()
 
                             val seasonFromText = Regex("""(?i)S(\d+)\s*[E\s:]*\s*(\d+)""").find(rawEpText)
@@ -141,10 +147,10 @@ class FilmapikProvider : MainAPI() {
                                 ?: 1
 
                             val cleanTitle = rawEpText
-                                .replace(Regex("""(?i)^Nonton\s+(?:Film|Series|Drama)?\s*"""), "")
-                                .replace(Regex("""(?i)\s+Subtitle\s+Indonesia.*$"""), "")
-                                .replace(Regex("""(?i)^S\d+\s*[E\s:]*\s*E?\d+\s*[\s:-]*"""), "")
-                                .replace(Regex("""(?i)^(?:EP|Episode)\s*\d+\s*[\s:-]*"""), "")
+                                .replace(Regex("""(?i)^Nonton\\s+(?:Film|Series|Drama)?\\s*"""), "")
+                                .replace(Regex("""(?i)\\s+Subtitle\\s+Indonesia.*$"""), "")
+                                .replace(Regex("""(?i)^S\\d+\\s*[E\\s:]*\\s*E?\\d+\\s*[\\s:-]*"""), "")
+                                .replace(Regex("""(?i)^(?:EP|Episode)\\s*\\d+\\s*[\\s:-]*"""), "")
                                 .trim()
 
                             val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
@@ -166,10 +172,11 @@ class FilmapikProvider : MainAPI() {
                     }
                 }
             } else {
+                // Fallback for flat episode lists
                 document.select("a.famv-episode-btn, a[href*='/episodes/'], a[href*='/episode/']").forEach { epLink ->
                     val epHref = epLink.attr("href")
                     if (epHref.isNotBlank() && epHref != "#") {
-                        val epPlayUrl = if (epHref.endsWith("/play/")) epHref else "${epHref.removeSuffix("/")}/play/"
+                        val epPlayUrl = if (epHref.endsWith("/play")) epHref else if (epHref.endsWith("/play/")) epHref.removeSuffix("/") else "${epHref.removeSuffix("/")}/play"
                         val rawEpText = epLink.text().trim()
 
                         val seasonFromText = Regex("""(?i)S(\d+)\s*[E\s:]*\s*(\d+)""").find(rawEpText)
@@ -186,10 +193,10 @@ class FilmapikProvider : MainAPI() {
                             ?: 1
 
                         val cleanTitle = rawEpText
-                            .replace(Regex("""(?i)^Nonton\s+(?:Film|Series|Drama)?\s*"""), "")
-                            .replace(Regex("""(?i)\s+Subtitle\s+Indonesia.*$"""), "")
-                            .replace(Regex("""(?i)^S\d+\s*[E\s:]*\s*E?\d+\s*[\s:-]*"""), "")
-                            .replace(Regex("""(?i)^(?:EP|Episode)\s*\d+\s*[\s:-]*"""), "")
+                            .replace(Regex("""(?i)^Nonton\\s+(?:Film|Series|Drama)?\\s*"""), "")
+                            .replace(Regex("""(?i)\\s+Subtitle\\s+Indonesia.*$"""), "")
+                            .replace(Regex("""(?i)^S\\d+\\s*[E\\s:]*\\s*E?\\d+\\s*[\\s:-]*"""), "")
+                            .replace(Regex("""(?i)^(?:EP|Episode)\\s*\\d+\\s*[\\s:-]*"""), "")
                             .trim()
 
                         val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
@@ -239,13 +246,82 @@ class FilmapikProvider : MainAPI() {
         }
     }
 
+    private fun base64UrlDecode(str: String): ByteArray {
+        val padded = str.replace("-", "+").replace("_", "/")
+        val padding = (4 - padded.length % 4) % 4
+        val finalStr = if (padding in 1..3) padded + "=".repeat(padding) else padded
+        return Base64.decode(finalStr, Base64.DEFAULT)
+    }
+
+    private suspend fun extractByseFilemoon(url: String, callback: (ExtractorLink) -> Unit): Boolean {
+        return try {
+            val code = url.trimEnd('/').substringAfterLast('/')
+            val uri = Uri.parse(url)
+            val host = uri.host ?: "byseqekaho.com"
+            val apiUrl = "https://$host/api/videos/$code"
+
+            val res = app.get(apiUrl, headers = mapOf("Referer" to url, "Accept" to "application/json"))
+            val json = JSONObject(res.text)
+            if (!json.has("playback")) return false
+            val playback = json.getJSONObject("playback")
+            val version = playback.optString("version").toIntOrNull() ?: return false
+            val keyPartsArr = playback.getJSONArray("key_parts")
+            if (keyPartsArr.length() < 20) return false
+
+            val p1Idx = version - 1
+            val p2Idx = (31 - version) - 1
+            if (p1Idx < 0 || p1Idx >= keyPartsArr.length() || p2Idx < 0 || p2Idx >= keyPartsArr.length()) return false
+
+            val p1 = base64UrlDecode(keyPartsArr.getString(p1Idx))
+            val p2 = base64UrlDecode(keyPartsArr.getString(p2Idx))
+            val keyBytes = p1 + p2 // 32 bytes AES key
+
+            val ivBytes = base64UrlDecode(playback.getString("iv"))
+            val payloadBytes = base64UrlDecode(playback.getString("payload"))
+
+            val secretKey = SecretKeySpec(keyBytes, "AES")
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val spec = GCMParameterSpec(128, ivBytes)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
+            val decryptedBytes = cipher.doFinal(payloadBytes)
+            val decryptedStr = String(decryptedBytes, Charsets.UTF_8)
+
+            val decryptedJson = JSONObject(decryptedStr)
+            val sources = decryptedJson.optJSONArray("sources") ?: return false
+            var found = false
+            for (i in 0 until sources.length()) {
+                val s = sources.getJSONObject(i)
+                val m3u8Url = s.optString("url")
+                val label = s.optString("label", "1080p")
+                if (m3u8Url.isNotBlank()) {
+                    callback.invoke(
+                        newExtractorLink(
+                            "Filemoon",
+                            "Filemoon $label (HLS)",
+                            m3u8Url,
+                            INFER_TYPE
+                        ) {
+                            this.referer = url
+                            this.quality = getQualityFromName(label)
+                        }
+                    )
+                    found = true
+                }
+            }
+            found
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     override suspend fun loadLinks(
         dataUrl: String,
         isCasting: Boolean,
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val playPageUrl = if (dataUrl.endsWith("/play/")) dataUrl else "${dataUrl.removeSuffix("/")}/play/"
+        val playPageUrl = if (dataUrl.endsWith("/play")) dataUrl else if (dataUrl.endsWith("/play/")) dataUrl.removeSuffix("/") else "${dataUrl.removeSuffix("/")}/play"
         val document = app.get(playPageUrl).document
         val serverList = mutableListOf<Pair<String, String>>() // Name to URL
 
@@ -290,7 +366,11 @@ class FilmapikProvider : MainAPI() {
         var linksFound = false
         serverList.forEach { (serverName, embedUrl) ->
             try {
-                if (embedUrl.contains("efek.stream")) {
+                if (embedUrl.contains("byseqekaho.com") || embedUrl.contains("byse.") || embedUrl.contains("filemoon") || serverName.contains("FILEMOON", ignoreCase = true)) {
+                    if (extractByseFilemoon(embedUrl, callback)) {
+                        linksFound = true
+                    }
+                } else if (embedUrl.contains("efek.stream") || serverName.contains("VIP", ignoreCase = true)) {
                     val embedDoc = app.get(embedUrl, referer = playPageUrl).text
                     val unpacked = getAndUnpack(embedDoc)
                     val sourcesMatch = Regex("""sources:\s*(\[.*?\])""").find(unpacked)
