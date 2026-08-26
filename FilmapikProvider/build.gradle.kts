@@ -8,7 +8,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.1")
 }
 
-version = 17
+version = 18
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")

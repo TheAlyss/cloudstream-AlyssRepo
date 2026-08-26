@@ -1,4 +1,4 @@
-﻿package com.thealyss.cloudstream.filmapik
+package com.thealyss.cloudstream.filmapik
 
 import android.net.Uri
 import android.util.Base64
@@ -153,7 +153,11 @@ class FilmapikProvider : MainAPI() {
                                 .replace(Regex("""(?i)^(?:EP|Episode)\\s*\\d+\\s*[\\s:-]*"""), "")
                                 .trim()
 
-                            val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
+                            val isGenericEpName = cleanTitle.isBlank() ||
+                                cleanTitle.matches(Regex("""(?i)^(?:EP|Episode|E)?\s*\d+$""")) ||
+                                cleanTitle.equals(epNum.toString(), ignoreCase = true)
+
+                            val displayName = if (!isGenericEpName) {
                                 "Episode $epNum: $cleanTitle"
                             } else {
                                 "Episode $epNum"
@@ -199,7 +203,11 @@ class FilmapikProvider : MainAPI() {
                             .replace(Regex("""(?i)^(?:EP|Episode)\\s*\\d+\\s*[\\s:-]*"""), "")
                             .trim()
 
-                        val displayName = if (cleanTitle.isNotBlank() && !cleanTitle.equals(epNum.toString(), ignoreCase = true)) {
+                        val isGenericEpName = cleanTitle.isBlank() ||
+                            cleanTitle.matches(Regex("""(?i)^(?:EP|Episode|E)?\s*\d+$""")) ||
+                            cleanTitle.equals(epNum.toString(), ignoreCase = true)
+
+                        val displayName = if (!isGenericEpName) {
                             "Episode $epNum: $cleanTitle"
                         } else {
                             "Episode $epNum"
