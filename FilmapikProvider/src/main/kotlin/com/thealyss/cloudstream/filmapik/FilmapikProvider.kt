@@ -290,8 +290,43 @@ class FilmapikProvider : MainAPI() {
         var linksFound = false
         serverList.forEach { (serverName, embedUrl) ->
             try {
-                if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
-                    linksFound = true
+                if (embedUrl.contains("efek.stream")) {
+                    val embedDoc = app.get(embedUrl, referer = playPageUrl).text
+                    val unpacked = getAndUnpack(embedDoc)
+                    val sourcesMatch = Regex("""sources:\s*(\[.*?\])""").find(unpacked)
+                    if (sourcesMatch != null) {
+                        val jsonArr = JSONArray(sourcesMatch.groupValues[1])
+                        for (i in 0 until jsonArr.length()) {
+                            val srcObj = jsonArr.getJSONObject(i)
+                            val file = srcObj.optString("file")
+                            val label = srcObj.optString("label", "VIP")
+                            if (file.isNotBlank()) {
+                                val fullFileUrl = if (file.startsWith("http")) file else "https://v2.efek.stream$file"
+                                val quality = getQualityFromName(label)
+                                callback.invoke(
+                                    newExtractorLink(
+                                        "VIP Server",
+                                        "VIP Server $label",
+                                        fullFileUrl,
+                                        INFER_TYPE
+                                    ) {
+                                        this.referer = "https://v2.efek.stream/"
+                                        this.headers = mapOf(
+                                            "Referer" to "https://v2.efek.stream/",
+                                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                                            "Accept" to "*/*"
+                                        )
+                                        this.quality = quality
+                                    }
+                                )
+                                linksFound = true
+                            }
+                        }
+                    }
+                } else {
+                    if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
+                        linksFound = true
+                    }
                 }
             } catch (e: Throwable) {
                 e.printStackTrace()
