@@ -51,19 +51,17 @@ class MovieboxProvider : MainAPI() {
 
     // Comprehensive Permanent 18+ / Adult / NSFW / BL Blacklist
     private val nsfwBlacklist = listOf(
-        // General / English 18+ & Porn
+        // Direct Pornography & 18+ Erotica
         "hentai", "jav", "uncensored", "r18", "adult", "porn", "xxx", "xvideos", "pornhub",
-        "erotica", "erotic", "nsfw", "18+", "nudity", "sensual", "lust", "seduction",
-        "ecchi", "sex", "sexy", "sexuality", "sexual", "strip", "stripper", "fetish", "smut",
-        "anal", "fuck", "fucking", "gay", "lesbian", "blowjob", "creampie", "handjob",
-        "milf", "boobs", "tits", "pussy", "dick", "cock", "vagina", "cum", "ejaculat",
-        "orgasm", "masturbat", "threesome", "gangbang", "bdsm", "hardcore", "softcore",
-        "nude", "naked", "topless", "bottomless", "bitch", "horny", "slut", "whore",
-        "incest", "taboo", "interracial", "camgirl", "cam4", "onlyfans", "brazzers",
-        "redtube", "xhamster", "youporn", "xrated", "x-rated", "mature 17+", "mature",
-        "ero", "yaoi", "yuri", "doujin", "doujinshi", "hentaivn", "hanime", "deepthroat",
-        "squirting", "orgy", "swinger", "bondage", "dominatrix", "dildo", "vibrator",
-        "voyeur", "peeping", "nympho", "midnight", "playboy", "penthouse", "hustler",
+        "erotica", "erotic", "nsfw", "18+", "nudity", "ecchi", "sex", "sexy", "sexuality",
+        "sexual", "stripper", "fetish", "smut", "anal", "fuck", "fucking", "gay", "lesbian",
+        "blowjob", "creampie", "handjob", "milf", "boobs", "tits", "pussy", "dick", "cock",
+        "vagina", "cum", "ejaculat", "orgasm", "masturbat", "threesome", "gangbang", "bdsm",
+        "hardcore", "softcore", "nude", "naked", "topless", "bottomless", "horny", "slut",
+        "whore", "incest", "camgirl", "cam4", "onlyfans", "brazzers", "redtube", "xhamster",
+        "youporn", "xrated", "x-rated", "yaoi", "yuri", "doujin", "doujinshi", "hentaivn",
+        "hanime", "deepthroat", "squirting", "orgy", "swinger", "dominatrix", "dildo",
+        "vibrator", "voyeur", "nympho", "playboy", "penthouse", "hustler",
 
         // Boys Love / Girls Love & Related Themes
         "boys love", "boys' love", "boy's love", "boyslove", "boylove", "bl story",
@@ -84,6 +82,13 @@ class MovieboxProvider : MainAPI() {
         "delicious delivery", "secret tutor"
     )
 
+    // Sports / Wrestling / Football Blacklist
+    private val sportsBlacklist = listOf(
+        "wrestling", "wrestler", "wwe", "aew", "smackdown", "raw", "royal rumble", "wrestlemania",
+        "football", "soccer", "fifa", "uefa", "premier league", "champions league", "la liga",
+        "serie a", "bundesliga", "nfl", "super bowl"
+    )
+
     // Regional Dubbing Blacklist (filters out duplicate Hindi/Tamil/Telugu audio dubs)
     private val dubBlacklist = listOf(
         "(hindi)", "[hindi]", "hindi dub", "(tamil)", "[tamil]", "tamil dub",
@@ -93,6 +98,15 @@ class MovieboxProvider : MainAPI() {
     )
 
     private val nsfwRegexList = nsfwBlacklist.map { keyword ->
+        val trimmed = keyword.trim()
+        if (trimmed.all { it.isLetterOrDigit() }) {
+            Regex("""(?i)\b${Regex.escape(trimmed)}\b""")
+        } else {
+            Regex("""(?i)(?:^|\W)${Regex.escape(trimmed)}(?:$|\W)""")
+        }
+    }
+
+    private val sportsRegexList = sportsBlacklist.map { keyword ->
         val trimmed = keyword.trim()
         if (trimmed.all { it.isLetterOrDigit() }) {
             Regex("""(?i)\b${Regex.escape(trimmed)}\b""")
@@ -122,6 +136,17 @@ class MovieboxProvider : MainAPI() {
         return nsfwRegexList.any { regex ->
             regex.containsMatchIn(combinedText)
         }
+    }
+
+    private fun isExcludedCategory(title: String? = null, tags: List<String>? = null): Boolean {
+        if (!title.isNullOrBlank()) {
+            if (sportsRegexList.any { it.containsMatchIn(title) }) return true
+        }
+        if (!tags.isNullOrEmpty()) {
+            val combinedTags = tags.joinToString(" ")
+            if (sportsRegexList.any { it.containsMatchIn(combinedTags) }) return true
+        }
+        return false
     }
 
     private fun isAnimeOrAnimation(subjectType: Int?, tags: List<String>?): Boolean {
@@ -285,7 +310,7 @@ class MovieboxProvider : MainAPI() {
             val url = "$mainAPIUrl/wefeed-h5api-bff/ranking-list/content?id=${request.data}&page=$page&perPage=12"
             val index = app.get(url).parsedSafe<Media>()?.data?.subjectList?.mapNotNull { item ->
                 val tags = item.genre?.split(",")?.map { it.trim() }
-                if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags) || isDubbedTitle(item.title)) null
+                if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags) || isDubbedTitle(item.title) || isExcludedCategory(item.title, tags)) null
                 else item.toSearchResponse(this)
             } ?: emptyList()
 
@@ -302,7 +327,7 @@ class MovieboxProvider : MainAPI() {
             val index = app.post("$mainAPIUrl/wefeed-h5api-bff/subject/filter", requestBody = body)
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
                     val tags = item.genre?.split(",")?.map { it.trim() }
-                    if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags) || isDubbedTitle(item.title)) null
+                    if (isNsfw(title = item.title, description = item.description, tags = tags) || isAnimeOrAnimation(item.subjectType, tags) || isDubbedTitle(item.title) || isExcludedCategory(item.title, tags)) null
                     else item.toSearchResponse(this)
                 } ?: emptyList()
 
@@ -315,7 +340,7 @@ class MovieboxProvider : MainAPI() {
     override suspend fun quickSearch(query: String): List<SearchResponse> = search(query)
 
     override suspend fun search(query: String): List<SearchResponse> {
-        if (isNsfw(title = query)) return emptyList()
+        if (isNsfw(title = query) || isExcludedCategory(title = query)) return emptyList()
 
         val url = "$mobileAPIUrl/wefeed-mobile-bff/subject-api/search/v2"
         val jsonBody = """{"page": 1, "perPage": 20, "keyword": "$query"}"""
@@ -371,8 +396,8 @@ class MovieboxProvider : MainAPI() {
                     subjectItem.get("tags")?.forEach { tags.add(it.asText()) }
                     subjectItem.get("genre")?.asText()?.split(",")?.map { it.trim() }?.let { tags.addAll(it) }
 
-                    // Comprehensive permanent 18+, Anime, BL & Regional Dub removal from MovieBox
-                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify) || isAnimeOrAnimation(subjectType, tags) || isDubbedTitle(title)) return@forEach
+                    // Comprehensive permanent 18+, Anime, BL, Sports & Regional Dub removal from MovieBox
+                    if (isNsfw(title = title, description = desc, tags = tags, isAdult = isAdult, classify = classify) || isAnimeOrAnimation(subjectType, tags) || isDubbedTitle(title) || isExcludedCategory(title, tags)) return@forEach
 
                     val tvType = if (subjectType == 2) TvType.TvSeries else TvType.Movie
                     results.add(
@@ -404,8 +429,11 @@ class MovieboxProvider : MainAPI() {
         val description = subject?.description
 
         // Strict filter on load
-        if (isNsfw(title = title, description = description, tags = tags)) {
+        if (isNsfw(title = title, tags = tags)) {
             throw ErrorLoadingException("Content filtered by SafeSearch (18+ / Adult content)")
+        }
+        if (isExcludedCategory(title = title, tags = tags)) {
+            throw ErrorLoadingException("Content filtered (Sports / Wrestling / Football)")
         }
 
         val year = subject?.releaseDate?.substringBefore("-")?.toIntOrNull()
@@ -426,7 +454,7 @@ class MovieboxProvider : MainAPI() {
             app.get("$mainUrl/wefeed-h5-bff/web/subject/detail-rec?subjectId=$id&page=1&perPage=12")
                 .parsedSafe<Media>()?.data?.items?.mapNotNull { item ->
                     val itemTags = item.genre?.split(",")?.map { it.trim() }
-                    if (isNsfw(title = item.title, description = item.description, tags = itemTags) || isAnimeOrAnimation(item.subjectType, itemTags) || isDubbedTitle(item.title)) null
+                    if (isNsfw(title = item.title, description = item.description, tags = itemTags) || isAnimeOrAnimation(item.subjectType, itemTags) || isDubbedTitle(item.title) || isExcludedCategory(item.title, itemTags)) null
                     else item.toSearchResponse(this)
                 }
 
