@@ -455,6 +455,20 @@ class FilmapikProvider : MainAPI() {
                     if (extractVipServer(embedUrl, playPageUrl, callback)) {
                         linksFound = true
                     }
+                } else if (embedUrl.contains("abyssplayer.com") || embedUrl.contains("abyss") || embedUrl.contains("hydrax") || serverName.contains("HYDRAX", ignoreCase = true)) {
+                    val slug = embedUrl.trimEnd('/').substringAfterLast("/")
+                    val hydraxUrls = listOf(
+                        "https://abysscdn.com/?v=$slug",
+                        "https://short.ink/$slug",
+                        "https://hydrax.net/watch?v=$slug",
+                        embedUrl
+                    )
+                    for (hUrl in hydraxUrls) {
+                        if (loadExtractor(hUrl, playPageUrl, subtitleCallback, callback)) {
+                            linksFound = true
+                            break
+                        }
+                    }
                 } else {
                     if (loadExtractor(embedUrl, playPageUrl, subtitleCallback, callback)) {
                         linksFound = true
