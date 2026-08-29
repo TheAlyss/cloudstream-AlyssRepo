@@ -99,7 +99,7 @@ class MovieboxProvider : MainAPI() {
 
     private val nsfwRegexList = nsfwBlacklist.map { keyword ->
         val trimmed = keyword.trim()
-        if (trimmed.all { it.isLetterOrDigit() }) {
+        if (Regex("""^[a-zA-Z0-9]+$""").matches(trimmed)) {
             Regex("""(?i)\b${Regex.escape(trimmed)}\b""")
         } else {
             Regex("""(?i)(?:^|\W)${Regex.escape(trimmed)}(?:$|\W)""")
@@ -108,7 +108,7 @@ class MovieboxProvider : MainAPI() {
 
     private val sportsRegexList = sportsBlacklist.map { keyword ->
         val trimmed = keyword.trim()
-        if (trimmed.all { it.isLetterOrDigit() }) {
+        if (Regex("""^[a-zA-Z0-9]+$""").matches(trimmed)) {
             Regex("""(?i)\b${Regex.escape(trimmed)}\b""")
         } else {
             Regex("""(?i)(?:^|\W)${Regex.escape(trimmed)}(?:$|\W)""")
