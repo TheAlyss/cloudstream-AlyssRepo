@@ -1,4 +1,4 @@
-﻿package com.moviebox
+package com.moviebox
 
 import android.net.Uri
 import android.util.Base64
@@ -92,6 +92,15 @@ class MovieboxProvider : MainAPI() {
         "(punjabi)", "[punjabi]", "(dual audio)", "[dual audio]"
     )
 
+    private val nsfwRegexList = nsfwBlacklist.map { keyword ->
+        val trimmed = keyword.trim()
+        if (trimmed.all { it.isLetterOrDigit() }) {
+            Regex("""(?i)\b${Regex.escape(trimmed)}\b""")
+        } else {
+            Regex("""(?i)(?:^|\W)${Regex.escape(trimmed)}(?:$|\W)""")
+        }
+    }
+
     private fun isNsfw(
         title: String? = null,
         description: String? = null,
@@ -106,12 +115,12 @@ class MovieboxProvider : MainAPI() {
             if (!description.isNullOrBlank()) append(description).append(" ")
             if (!classify.isNullOrBlank()) append(classify).append(" ")
             if (!tags.isNullOrEmpty()) append(tags.joinToString(" ")).append(" ")
-        }.lowercase(Locale.ROOT)
+        }
 
         if (combinedText.isBlank()) return false
 
-        return nsfwBlacklist.any { keyword ->
-            combinedText.contains(keyword)
+        return nsfwRegexList.any { regex ->
+            regex.containsMatchIn(combinedText)
         }
     }
 
