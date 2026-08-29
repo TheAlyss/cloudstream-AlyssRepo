@@ -353,36 +353,21 @@ class FilmapikProvider : MainAPI() {
                     "https://$host$rawFile"
                 }
 
-                // Pre-resolve 302 redirect so ExoPlayer connects directly to storage server (s1/s2/s3.efek.stream)
-                val directUrl = try {
-                    val headRes = app.get(
-                        fullFileUrl,
-                        headers = mapOf(
-                            "Referer" to embedUrl,
-                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                        )
-                    )
-                    if (headRes.url.isNotBlank()) headRes.url else fullFileUrl
-                } catch (e: Exception) {
-                    fullFileUrl
-                }
-
-                val directHost = Uri.parse(directUrl).host ?: host
+                val fileHost = Uri.parse(fullFileUrl).host ?: host
                 val quality = getQualityFromName(label)
 
                 callback.invoke(
                     newExtractorLink(
                         "VIP Server",
                         "VIP Server $label",
-                        directUrl,
+                        fullFileUrl,
                         INFER_TYPE
                     ) {
-                        this.referer = "https://$directHost/"
+                        this.referer = "https://$fileHost/"
                         this.headers = mapOf(
-                            "Referer" to "https://$directHost/",
+                            "Referer" to embedUrl,
                             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                            "Accept" to "*/*",
-                            "Connection" to "keep-alive"
+                            "Accept" to "*/*"
                         )
                         this.quality = quality
                     }
