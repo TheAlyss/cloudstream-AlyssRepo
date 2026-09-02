@@ -37,11 +37,11 @@ https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/repo.jso
 
 ## 📦 Available Extensions
 
-| No. | Extension | Status | Language | Content Type | Features |
-| :---: | :--- | :---: | :---: | :--- | :--- |
-| 1 | **YLnime** | 🟢 Active | Indonesian | 🌸 Anime, 📺 Series, 🎬 Movies | ⚡ Fast CDN, 🌐 Pixeldrain, 🎯 1080p FHD Priority, 🔤 A-Z List |
-| 2 | **Filmapik** | 🟢 Active | Indonesian | 🎬 Movies, 📺 TV Series, 🎭 Asian Drama, 🌸 Anime | 🚀 Multiple Servers, 🔍 Fast Search |
-| 3 | **MovieBox** | 🟢 Active | Indonesian | 🎬 Movies, 📺 TV Series, 🎭 Asian Drama | 🍿 High Quality Streaming |
+| No. | Extension | Status | Language | Content Type |
+| :---: | :--- | :---: | :---: | :--- |
+| 1 | **YLnime** | 🟢 Active | Indonesian | 🌸 Anime, 📺 Series, 🎬 Movies |
+| 2 | **Filmapik** | 🟢 Active | Indonesian | 🎬 Movies, 📺 TV Series, 🎭 Asian Drama, 🌸 Anime |
+| 3 | **MovieBox** | 🟢 Active | Indonesian | 🎬 Movies, 📺 TV Series, 🎭 Asian Drama |
 
 ---
 
