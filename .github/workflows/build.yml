@@ -42,7 +42,23 @@ jobs:
         run: |
           cd src
           chmod +x gradlew
-          ./gradlew make makePluginsJson --stacktrace
+          ./gradlew make makePluginsJson --stacktrace > build_output.log 2>&1 || {
+            echo "BUILD FAILED" >> build_output.log
+            mkdir -p ../builds
+            cp build_output.log ../builds/
+            cd ../builds
+            if [ ! -d ".git" ]; then
+              git init -b builds
+            fi
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -B builds
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+            git add build_output.log
+            git commit -m "Capture build failure log [skip ci]" || true
+            git push origin builds
+            exit 1
+          }
           mkdir -p ../builds
           cp repo.json ../builds/ 2>/dev/null || true
           cp build/*.cs3 ../builds/ 2>/dev/null || true
