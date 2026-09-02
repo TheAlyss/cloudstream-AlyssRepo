@@ -1,5 +1,5 @@
 ﻿android {
-    namespace = "com.thealyss.cloudstream.animasu"
+    namespace = "com.thealyss.cloudstream.ylnime"
 }
 
 dependencies {
@@ -8,14 +8,14 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.1")
 }
 
-version = 6
+version = 1
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")
-    description = "Nonton Anime Subtitle Indonesia dari Animasu"
+    description = "Nonton Anime Subtitle Indonesia dari YLnime"
     authors = listOf("TheAlyss")
     language = "id"
     status = 1
     tvTypes = listOf("Anime", "TvSeries", "Movie")
-    iconUrl = "https://2.bp.blogspot.com/-QiWOTKfmgHg/XcWMAQMFtzI/AAAAAAAAFkM/9X0xgYkMVEAndahC2JNb-v4tFX8JLOWRACLcBGAsYHQ/s200/animasudotnet_simple_logo.png"
+    iconUrl = "https://ylnime.com/banner.jpg"
 }

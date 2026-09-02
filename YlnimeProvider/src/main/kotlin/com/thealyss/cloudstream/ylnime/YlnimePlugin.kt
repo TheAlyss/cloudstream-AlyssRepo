@@ -1,12 +1,12 @@
-﻿package com.thealyss.cloudstream.animasu
+﻿package com.thealyss.cloudstream.ylnime
 
-import android.content.Context
 import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
 import com.lagradost.cloudstream3.plugins.Plugin
+import android.content.Context
 
 @CloudstreamPlugin
-class AnimasuPlugin : Plugin() {
+class YlnimePlugin: Plugin() {
     override fun load(context: Context) {
-        registerMainAPI(AnimasuProvider())
+        registerMainAPI(YlnimeProvider())
     }
 }
