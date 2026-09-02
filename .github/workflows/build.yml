@@ -42,7 +42,7 @@ jobs:
         run: |
           cd src
           chmod +x gradlew
-          ./gradlew make makePluginsJson
+          ./gradlew make makePluginsJson --stacktrace
           mkdir -p ../builds
           cp repo.json ../builds/ 2>/dev/null || true
           cp build/*.cs3 ../builds/ 2>/dev/null || true
@@ -63,5 +63,6 @@ jobs:
           git commit -m "Update CloudStream plugins and plugins.json [skip ci]" || exit 0
           git push origin builds
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/plugins.json" || true
+          curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/AnimasuProvider.cs3" || true
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/FilmapikProvider.cs3" || true
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/MovieboxProvider.cs3" || true
