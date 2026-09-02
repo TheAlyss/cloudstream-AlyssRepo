@@ -198,6 +198,82 @@ class YlnimeProvider : MainAPI() {
         }
     }
 
+    private fun extractStreamsFromJson(html: String, pageUrl: String): List<ExtractorLink> {
+        val links = mutableListOf<ExtractorLink>()
+        val streamsMatch = Regex("""const\s+streams\s*=\s*(\[[\s\S]*?\]);""").find(html) ?: return links
+        try {
+            val jsonArray = JSONArray(streamsMatch.groupValues[1])
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.optJSONObject(i) ?: continue
+                val rawLink = obj.optString("link")
+                val reso = obj.optString("reso", "720p")
+                if (rawLink.isNotBlank()) {
+                    val linkUrl = rawLink.replace("\\/", "/")
+                    val qualityInt = when {
+                        reso.contains("1080") -> Qualities.P1080.value
+                        reso.contains("720") -> Qualities.P720.value
+                        reso.contains("480") -> Qualities.P480.value
+                        reso.contains("360") -> Qualities.P360.value
+                        else -> Qualities.P720.value
+                    }
+                    val qualityLabel = when (qualityInt) {
+                        Qualities.P1080.value -> "1080p FHD"
+                        Qualities.P720.value -> "720p HD"
+                        Qualities.P480.value -> "480p SD"
+                        Qualities.P360.value -> "360p SD"
+                        else -> "${qualityInt}p"
+                    }
+                    val serverName = when {
+                        linkUrl.contains("pixeldrain.com") -> "Pixeldrain"
+                        linkUrl.contains("storage.animekita.org") -> "YLnime (Fast CDN)"
+                        linkUrl.contains("blogger.com") || linkUrl.contains("googlevideo.com") -> "Blogger"
+                        linkUrl.contains("vidhide") -> "VidHide"
+                        else -> "YLnime"
+                    }
+
+                    if (linkUrl.contains(".m3u8")) {
+                        M3u8Helper.generateM3u8(
+                            source = serverName,
+                            streamUrl = linkUrl,
+                            referer = pageUrl
+                        ).forEach { mLink ->
+                            links.add(
+                                newExtractorLink(
+                                    source = serverName,
+                                    name = "$serverName - $qualityLabel",
+                                    url = mLink.url,
+                                    type = INFER_TYPE
+                                ) {
+                                    this.referer = pageUrl
+                                    this.quality = qualityInt
+                                }
+                            )
+                        }
+                    } else {
+                        links.add(
+                            newExtractorLink(
+                                source = serverName,
+                                name = "$serverName - $qualityLabel",
+                                url = linkUrl,
+                                type = INFER_TYPE
+                            ) {
+                                this.referer = "https://ylnime.com/"
+                                this.headers = mapOf(
+                                    "Referer" to "https://ylnime.com/",
+                                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                                )
+                                this.quality = qualityInt
+                            }
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return links
+    }
+
     override suspend fun loadLinks(
         data: String,
         isCdn: Boolean,
@@ -209,82 +285,41 @@ class YlnimeProvider : MainAPI() {
         val html = document.html()
         val collectedLinks = mutableListOf<ExtractorLink>()
 
-        // 1. Extract JSON streams array
-        val streamsMatch = Regex("""const\s+streams\s*=\s*(\[[\s\S]*?\]);""").find(html)
-        if (streamsMatch != null) {
-            try {
-                val jsonArray = JSONArray(streamsMatch.groupValues[1])
-                for (i in 0 until jsonArray.length()) {
-                    val obj = jsonArray.optJSONObject(i) ?: continue
-                    val rawLink = obj.optString("link")
-                    val reso = obj.optString("reso", "720p")
-                    if (rawLink.isNotBlank()) {
-                        val linkUrl = rawLink.replace("\\/", "/")
-                        val qualityInt = when {
-                            reso.contains("1080") -> Qualities.P1080.value
-                            reso.contains("720") -> Qualities.P720.value
-                            reso.contains("480") -> Qualities.P480.value
-                            reso.contains("360") -> Qualities.P360.value
-                            else -> Qualities.P720.value
-                        }
-                        val qualityLabel = when (qualityInt) {
-                            Qualities.P1080.value -> "1080p FHD"
-                            Qualities.P720.value -> "720p HD"
-                            Qualities.P480.value -> "480p SD"
-                            Qualities.P360.value -> "360p SD"
-                            else -> "${qualityInt}p"
-                        }
-                        val serverName = when {
-                            linkUrl.contains("pixeldrain.com") -> "Pixeldrain"
-                            linkUrl.contains("storage.animekita.org") -> "YLnime (Fast CDN)"
-                            linkUrl.contains("blogger.com") || linkUrl.contains("googlevideo.com") -> "Blogger"
-                            linkUrl.contains("vidhide") -> "VidHide"
-                            else -> "YLnime"
-                        }
+        // 1. Extract streams from current page (usually 720p default)
+        collectedLinks.addAll(extractStreamsFromJson(html, fixedUrl))
 
-                        if (linkUrl.contains(".m3u8")) {
-                            M3u8Helper.generateM3u8(
-                                source = serverName,
-                                streamUrl = linkUrl,
-                                referer = fixedUrl
-                            ).forEach { mLink ->
-                                collectedLinks.add(
-                                    newExtractorLink(
-                                        source = serverName,
-                                        name = "$serverName - $qualityLabel",
-                                        url = mLink.url,
-                                        type = INFER_TYPE
-                                    ) {
-                                        this.referer = fixedUrl
-                                        this.quality = qualityInt
-                                    }
-                                )
-                            }
-                        } else {
-                            collectedLinks.add(
-                                newExtractorLink(
-                                    source = serverName,
-                                    name = "$serverName - $qualityLabel",
-                                    url = linkUrl,
-                                    type = INFER_TYPE
-                                ) {
-                                    this.referer = "https://ylnime.com/"
-                                    this.headers = mapOf(
-                                        "Referer" to "https://ylnime.com/",
-                                        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                                    )
-                                    this.quality = qualityInt
-                                }
-                            )
-                        }
-                    }
-                }
+        // 2. Extract streams from 1080p page if available
+        val reso1080Link = document.select("a[href*='reso=1080p']").firstOrNull()?.attr("href")
+        val url1080 = if (!reso1080Link.isNullOrBlank()) {
+            fixYlnimeUrl(reso1080Link)
+        } else {
+            if (!fixedUrl.contains("&reso=")) "$fixedUrl&reso=1080p" else null
+        }
+
+        if (url1080 != null && url1080 != fixedUrl) {
+            try {
+                val doc1080 = app.get(url1080, referer = "$mainUrl/").document
+                collectedLinks.addAll(extractStreamsFromJson(doc1080.html(), url1080))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
 
-        // 2. Extract embedded iframes if any
+        // 3. Extract other resolutions (480p, 360p) from buttons if present
+        document.select("a[href*='reso=']").forEach { a ->
+            val href = a.attr("href")
+            if (href.contains("reso=480p") || href.contains("reso=360p")) {
+                try {
+                    val resoUrl = fixYlnimeUrl(href)
+                    val resoDoc = app.get(resoUrl, referer = "$mainUrl/").document
+                    collectedLinks.addAll(extractStreamsFromJson(resoDoc.html(), resoUrl))
+                } catch (e: Exception) {
+                    // Ignore error for low quality fallback
+                }
+            }
+        }
+
+        // 4. Extract embedded iframes if any
         document.select("iframe[src]").forEach { iframe ->
             val src = fixUrlNull(iframe.attr("src")) ?: return@forEach
             if (!src.contains("ads") && !src.contains("cbox") && !src.contains("facebook")) {
@@ -294,7 +329,7 @@ class YlnimeProvider : MainAPI() {
             }
         }
 
-        // 3. Deduplicate and sort so highest quality runs FIRST!
+        // 5. Deduplicate and sort so 1080p FHD plays FIRST!
         val sortedLinks = collectedLinks
             .distinctBy { it.url }
             .sortedByDescending { it.quality }
