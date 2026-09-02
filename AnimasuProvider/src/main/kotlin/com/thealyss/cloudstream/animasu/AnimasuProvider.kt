@@ -208,6 +208,28 @@ class AnimasuProvider : MainAPI() {
         }
     }
 
+    private suspend fun extractBerkasDrive(url: String, callback: (ExtractorLink) -> Unit): Boolean {
+        return try {
+            val doc = app.get(url, referer = "$mainUrl/").text
+            val videoMatch = Regex("""<source[^>]+src=["']([^"']+)["']|<video[^>]+src=["']([^"']+)["']""").find(doc)
+                ?: Regex("""file\s*:\s*["']([^"']+\.mp4[^"']*)["']""").find(doc)
+            val mp4Url = (videoMatch?.groupValues?.get(1)?.ifBlank { null } ?: videoMatch?.groupValues?.get(2)) ?: return false
+            callback.invoke(
+                newExtractorLink("BerkasDrive", "BerkasDrive 720p", mp4Url, INFER_TYPE) {
+                    this.referer = url
+                    this.headers = mapOf(
+                        "Referer" to url,
+                        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    )
+                    this.quality = Qualities.P720.value
+                }
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private suspend fun extractAbyss(url: String, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
         return try {
             val slug = url.split("/").filter { it.isNotBlank() }.lastOrNull() ?: return false
@@ -244,6 +266,10 @@ class AnimasuProvider : MainAPI() {
                                 if (!extractYourUpload(fixedSrc, callback)) {
                                     loadExtractor(fixedSrc, data, subtitleCallback, callback)
                                 }
+                            } else if (fixedSrc.contains("berkasdrive.com") || fixedSrc.contains("mitedrive.com")) {
+                                if (!extractBerkasDrive(fixedSrc, callback)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                                }
                             } else if (fixedSrc.contains("abyssplayer.com") || fixedSrc.contains("abysscdn.com") || fixedSrc.contains("short.ink")) {
                                 extractAbyss(fixedSrc, subtitleCallback, callback)
                             } else {
@@ -265,6 +291,10 @@ class AnimasuProvider : MainAPI() {
                 if (seenUrls.add(fixedSrc)) {
                     if (fixedSrc.contains("yourupload.com")) {
                         if (!extractYourUpload(fixedSrc, callback)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                        }
+                    } else if (fixedSrc.contains("berkasdrive.com") || fixedSrc.contains("mitedrive.com")) {
+                        if (!extractBerkasDrive(fixedSrc, callback)) {
                             loadExtractor(fixedSrc, data, subtitleCallback, callback)
                         }
                     } else if (fixedSrc.contains("abyssplayer.com") || fixedSrc.contains("abysscdn.com") || fixedSrc.contains("short.ink")) {
