@@ -8,5 +8,11 @@ import com.lagradost.cloudstream3.plugins.Plugin
 class AnimasuPlugin : Plugin() {
     override fun load(context: Context) {
         registerMainAPI(AnimasuProvider())
+        registerExtractorAPI(CustomVidHide())
+        registerExtractorAPI(VidHidePro())
+        registerExtractorAPI(VidHideFast())
+        registerExtractorAPI(VidHideVip())
+        registerExtractorAPI(VidHidePre())
+        registerExtractorAPI(Callistanise())
     }
 }
