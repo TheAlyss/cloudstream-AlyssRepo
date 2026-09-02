@@ -32,14 +32,35 @@ class YlnimeProvider : MainAPI() {
         "$mainUrl/anime-list.php" to "A-Z Anime List"
     )
 
+    private fun fixYlnimeUrl(url: String): String {
+        val clean = url.trim()
+        return when {
+            clean.startsWith("http://") || clean.startsWith("https://") -> {
+                if (clean.contains("ylnime.com/?")) {
+                    clean.replace("ylnime.com/?", "ylnime.com/index.php?")
+                } else if (clean.matches(Regex("""https?://ylnime\.com\?(.*)"""))) {
+                    clean.replaceFirst("ylnime.com?", "ylnime.com/index.php?")
+                } else {
+                    clean
+                }
+            }
+            clean.startsWith("?") -> "$mainUrl/index.php$clean"
+            clean.startsWith("/?") -> "$mainUrl/index.php?${clean.removePrefix("/?")}"
+            clean.startsWith("/") -> "$mainUrl$clean"
+            clean.startsWith("index.php") -> "$mainUrl/$clean"
+            else -> "$mainUrl/$clean"
+        }
+    }
+
     private fun Element.toSearchResponse(): SearchResponse? {
         val a = this.selectFirst("a.stretched-link")
             ?: this.selectFirst("a[href*='series=']")
             ?: this.selectFirst("a")
             ?: return null
 
-        val href = fixUrlNull(a.attr("href")) ?: return null
-        if (!href.contains("series=")) return null
+        val rawHref = a.attr("href")
+        if (!rawHref.contains("series=")) return null
+        val href = fixYlnimeUrl(rawHref)
 
         val rawTitle = this.selectFirst(".card-title")?.text()
             ?: this.selectFirst("h6, h5")?.text()
@@ -100,7 +121,8 @@ class YlnimeProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val document = app.get(url, referer = "$mainUrl/").document
+        val fixedUrl = fixYlnimeUrl(url)
+        val document = app.get(fixedUrl, referer = "$mainUrl/").document
 
         val rawTitle = document.selectFirst("h1")?.text()
             ?: document.selectFirst("meta[property=og:title]")?.attr("content")?.substringBefore(" Sub Indo")
@@ -137,7 +159,7 @@ class YlnimeProvider : MainAPI() {
         val seen = HashSet<String>()
 
         document.select("a[href*='episode=']").forEach { a ->
-            val href = fixUrlNull(a.attr("href")) ?: return@forEach
+            val href = fixYlnimeUrl(a.attr("href"))
             if (!seen.add(href)) return@forEach
             val rawText = a.text().replace("\r", " ").replace("\n", " ").trim()
             val epNum = Regex("""(?i)episode\s*(\d+)""").find(rawText)?.groupValues?.get(1)?.toIntOrNull()
@@ -160,15 +182,15 @@ class YlnimeProvider : MainAPI() {
             .sortedBy { it.episode ?: 0 }
 
         if (isMovie && sortedEpisodes.size <= 1) {
-            val playUrl = sortedEpisodes.firstOrNull()?.data ?: url
-            return newMovieLoadResponse(cleanTitle, url, TvType.AnimeMovie, playUrl) {
+            val playUrl = sortedEpisodes.firstOrNull()?.data ?: fixedUrl
+            return newMovieLoadResponse(cleanTitle, fixedUrl, TvType.AnimeMovie, playUrl) {
                 this.posterUrl = poster
                 this.plot = synopsis.ifBlank { null }
                 this.tags = if (genres.isNotEmpty()) genres else null
             }
         }
 
-        return newTvSeriesLoadResponse(cleanTitle, url, TvType.Anime, sortedEpisodes) {
+        return newTvSeriesLoadResponse(cleanTitle, fixedUrl, TvType.Anime, sortedEpisodes) {
             this.posterUrl = poster
             this.plot = synopsis.ifBlank { null }
             this.tags = if (genres.isNotEmpty()) genres else null
@@ -182,7 +204,8 @@ class YlnimeProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val document = app.get(data, referer = "$mainUrl/").document
+        val fixedUrl = fixYlnimeUrl(data)
+        val document = app.get(fixedUrl, referer = "$mainUrl/").document
         val html = document.html()
         val collectedLinks = mutableListOf<ExtractorLink>()
 
@@ -223,7 +246,7 @@ class YlnimeProvider : MainAPI() {
                             M3u8Helper.generateM3u8(
                                 source = serverName,
                                 streamUrl = linkUrl,
-                                referer = data
+                                referer = fixedUrl
                             ).forEach { mLink ->
                                 collectedLinks.add(
                                     newExtractorLink(
@@ -232,7 +255,7 @@ class YlnimeProvider : MainAPI() {
                                         url = mLink.url,
                                         type = INFER_TYPE
                                     ) {
-                                        this.referer = data
+                                        this.referer = fixedUrl
                                         this.quality = qualityInt
                                     }
                                 )
@@ -265,7 +288,7 @@ class YlnimeProvider : MainAPI() {
         document.select("iframe[src]").forEach { iframe ->
             val src = fixUrlNull(iframe.attr("src")) ?: return@forEach
             if (!src.contains("ads") && !src.contains("cbox") && !src.contains("facebook")) {
-                loadExtractor(src, data, subtitleCallback) { link ->
+                loadExtractor(src, fixedUrl, subtitleCallback) { link ->
                     collectedLinks.add(link)
                 }
             }
