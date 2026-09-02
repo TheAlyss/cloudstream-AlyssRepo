@@ -1,4 +1,4 @@
-﻿android {
+android {
     namespace = "com.thealyss.cloudstream.ylnime"
 }
 
@@ -8,7 +8,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.18.1")
 }
 
-version = 3
+version = 4
 
 cloudstream {
     setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/TheAlyss/cloudstream-AlyssRepo")

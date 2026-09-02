@@ -1,4 +1,4 @@
-﻿package com.thealyss.cloudstream.ylnime
+package com.thealyss.cloudstream.ylnime
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -203,6 +203,9 @@ class YlnimeProvider : MainAPI() {
         val streamsMatch = Regex("""const\s+streams\s*=\s*(\[[\s\S]*?\]);""").find(html) ?: return links
         try {
             val jsonArray = JSONArray(streamsMatch.groupValues[1])
+            val serverTypeCounts = mutableMapOf<String, Int>()
+            val parsedItems = mutableListOf<Triple<String, Int, String>>()
+
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.optJSONObject(i) ?: continue
                 val rawLink = obj.optString("link")
@@ -210,62 +213,69 @@ class YlnimeProvider : MainAPI() {
                 if (rawLink.isNotBlank()) {
                     val linkUrl = rawLink.replace("\\/", "/")
                     val qualityInt = when {
-                        reso.contains("1080") -> Qualities.P1080.value
-                        reso.contains("720") -> Qualities.P720.value
-                        reso.contains("480") -> Qualities.P480.value
-                        reso.contains("360") -> Qualities.P360.value
+                        reso.contains("1080") || linkUrl.contains("1080p") -> Qualities.P1080.value
+                        reso.contains("720") || linkUrl.contains("720p") -> Qualities.P720.value
+                        reso.contains("480") || linkUrl.contains("480p") -> Qualities.P480.value
+                        reso.contains("360") || linkUrl.contains("360p") -> Qualities.P360.value
                         else -> Qualities.P720.value
                     }
-                    val qualityLabel = when (qualityInt) {
-                        Qualities.P1080.value -> "1080p FHD"
-                        Qualities.P720.value -> "720p HD"
-                        Qualities.P480.value -> "480p SD"
-                        Qualities.P360.value -> "360p SD"
-                        else -> "${qualityInt}p"
-                    }
-                    val serverName = when {
+                    val baseServerName = when {
                         linkUrl.contains("pixeldrain.com") -> "Pixeldrain"
-                        linkUrl.contains("storage.animekita.org") -> "YLnime (Fast CDN)"
+                        linkUrl.contains("storage.animekita.org") || linkUrl.contains("animekita") -> "YLnime (Fast CDN)"
                         linkUrl.contains("blogger.com") || linkUrl.contains("googlevideo.com") -> "Blogger"
                         linkUrl.contains("vidhide") -> "VidHide"
-                        else -> "YLnime"
+                        else -> "YLnime Server"
                     }
+                    serverTypeCounts[baseServerName] = (serverTypeCounts[baseServerName] ?: 0) + 1
+                    parsedItems.add(Triple(baseServerName, qualityInt, linkUrl))
+                }
+            }
 
-                    if (linkUrl.contains(".m3u8")) {
-                        M3u8Helper.generateM3u8(
-                            source = serverName,
-                            streamUrl = linkUrl,
-                            referer = pageUrl
-                        ).forEach { mLink ->
-                            links.add(
-                                newExtractorLink(
-                                    source = serverName,
-                                    name = "$serverName - $qualityLabel",
-                                    url = mLink.url,
-                                    type = INFER_TYPE
-                                ) {
-                                    this.referer = pageUrl
-                                    this.quality = qualityInt
-                                }
-                            )
-                        }
-                    } else {
+            val currentServerIndex = mutableMapOf<String, Int>()
+            for ((baseServerName, qualityInt, linkUrl) in parsedItems) {
+                val totalCount = serverTypeCounts[baseServerName] ?: 1
+                val displayName = if (totalCount > 1) {
+                    val idx = (currentServerIndex[baseServerName] ?: 0) + 1
+                    currentServerIndex[baseServerName] = idx
+                    if (baseServerName.contains("Fast CDN")) "YLnime (Fast CDN $idx)" else "$baseServerName $idx"
+                } else {
+                    baseServerName
+                }
+
+                if (linkUrl.contains(".m3u8")) {
+                    M3u8Helper.generateM3u8(
+                        source = displayName,
+                        streamUrl = linkUrl,
+                        referer = pageUrl
+                    ).forEach { mLink ->
                         links.add(
                             newExtractorLink(
-                                source = serverName,
-                                name = "$serverName - $qualityLabel",
-                                url = linkUrl,
+                                source = displayName,
+                                name = displayName,
+                                url = mLink.url,
                                 type = INFER_TYPE
                             ) {
-                                this.referer = "https://ylnime.com/"
-                                this.headers = mapOf(
-                                    "Referer" to "https://ylnime.com/",
-                                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                                )
+                                this.referer = pageUrl
                                 this.quality = qualityInt
                             }
                         )
                     }
+                } else {
+                    links.add(
+                        newExtractorLink(
+                            source = displayName,
+                            name = displayName,
+                            url = linkUrl,
+                            type = INFER_TYPE
+                        ) {
+                            this.referer = "https://ylnime.com/"
+                            this.headers = mapOf(
+                                "Referer" to "https://ylnime.com/",
+                                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                            )
+                            this.quality = qualityInt
+                        }
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -284,42 +294,43 @@ class YlnimeProvider : MainAPI() {
         val document = app.get(fixedUrl, referer = "$mainUrl/").document
         val html = document.html()
         val collectedLinks = mutableListOf<ExtractorLink>()
+        val visitedUrls = mutableSetOf(fixedUrl)
 
-        // 1. Extract streams from current page (default 720p)
+        // 1. Extract streams from base page
         collectedLinks.addAll(extractStreamsFromJson(html, fixedUrl))
 
-        // 2. Extract streams from 1080p page if available
-        val reso1080Link = document.select("a[href*='reso=1080p']").firstOrNull()?.attr("href")
-        val url1080 = if (!reso1080Link.isNullOrBlank()) {
-            fixYlnimeUrl(reso1080Link)
-        } else {
-            if (!fixedUrl.contains("&reso=")) "$fixedUrl&reso=1080p" else null
-        }
-
-        if (url1080 != null && url1080 != fixedUrl) {
-            try {
-                val doc1080 = app.get(url1080, referer = "$mainUrl/").document
-                collectedLinks.addAll(extractStreamsFromJson(doc1080.html(), url1080))
-            } catch (e: Exception) {
-                e.printStackTrace()
+        // 2. Extract from resolution buttons (1080p, 720p, 480p, 360p)
+        val resoLinks = document.select("a[href*='reso=']").map { it.attr("href") }
+            .map { fixYlnimeUrl(it) }
+            .distinct()
+            .sortedByDescending { url ->
+                when {
+                    url.contains("reso=1080") -> 4
+                    url.contains("reso=720") -> 3
+                    url.contains("reso=480") -> 2
+                    url.contains("reso=360") -> 1
+                    else -> 0
+                }
             }
+
+        val allResoUrls = resoLinks.toMutableList()
+        val url1080Constructed = if (!fixedUrl.contains("&reso=")) "$fixedUrl&reso=1080p" else null
+        if (url1080Constructed != null && !allResoUrls.any { it.contains("reso=1080") }) {
+            allResoUrls.add(0, url1080Constructed)
         }
 
-        // 3. Extract other resolutions (480p, 360p) from buttons if present
-        document.select("a[href*='reso=']").forEach { a ->
-            val href = a.attr("href")
-            if (href.contains("reso=480p") || href.contains("reso=360p")) {
+        for (resoUrl in allResoUrls) {
+            if (visitedUrls.add(resoUrl)) {
                 try {
-                    val resoUrl = fixYlnimeUrl(href)
                     val resoDoc = app.get(resoUrl, referer = "$mainUrl/").document
                     collectedLinks.addAll(extractStreamsFromJson(resoDoc.html(), resoUrl))
                 } catch (e: Exception) {
-                    // Ignore error for low quality fallback
+                    // Ignore errors for optional resolution pages
                 }
             }
         }
 
-        // 4. Extract embedded iframes if any
+        // 3. Extract embedded iframes if any
         document.select("iframe[src]").forEach { iframe ->
             val src = fixUrlNull(iframe.attr("src")) ?: return@forEach
             if (!src.contains("ads") && !src.contains("cbox") && !src.contains("facebook")) {
@@ -329,7 +340,7 @@ class YlnimeProvider : MainAPI() {
             }
         }
 
-        // 5. Deduplicate and sort so 1080p FHD plays FIRST!
+        // 4. Deduplicate and sort so 1080p FHD plays FIRST!
         val sortedLinks = collectedLinks
             .distinctBy { it.url }
             .sortedByDescending { it.quality }
