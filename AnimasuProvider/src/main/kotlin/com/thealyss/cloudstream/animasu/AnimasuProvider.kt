@@ -34,7 +34,7 @@ class AnimasuProvider : MainAPI() {
     private fun Element.toSearchResponse(): SearchResponse? {
         val a = this.selectFirst("a") ?: this.selectFirst(".bsx a") ?: return null
         val href = fixUrlNull(a.attr("href")) ?: return null
-        
+
         val rawTitle = a.attr("title").ifBlank {
             this.selectFirst(".tt")?.text() ?: a.text()
         }
@@ -42,7 +42,7 @@ class AnimasuProvider : MainAPI() {
             .replace("Nonton Anime ", "", ignoreCase = true)
             .replace("Sub Indo", "", ignoreCase = true)
             .trim()
-            
+
         if (cleanTitle.isBlank()) return null
 
         val posterUrl = this.selectFirst("img")?.let { img ->
@@ -55,11 +55,12 @@ class AnimasuProvider : MainAPI() {
         }
 
         val latestEp = this.selectFirst(".epx, .bt .epx")?.text()?.trim()
+        val epNum = latestEp?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
         val isTypeMovie = this.selectFirst(".typez")?.text()?.contains("Movie", ignoreCase = true) == true
 
         return newAnimeSearchResponse(cleanTitle, href, if (isTypeMovie) TvType.AnimeMovie else TvType.Anime) {
             this.posterUrl = fixUrlNull(posterUrl)
-            addSub(latestEp)
+            addSub(epNum)
         }
     }
 
@@ -97,7 +98,7 @@ class AnimasuProvider : MainAPI() {
 
     override suspend fun load(url: String): LoadResponse {
         val document = app.get(url, referer = "$mainUrl/").document
-        
+
         val rawTitle = document.selectFirst("div.infox h1")?.text()
             ?: document.selectFirst("meta[property=og:title]")?.attr("content")
             ?: ""
@@ -116,9 +117,9 @@ class AnimasuProvider : MainAPI() {
 
         val synopsis = document.select("div.sinopsis, div[itemprop=articleBody], span.desc").text().trim()
         val genres = document.select("div.spe span:contains(Genre) a, .genxed a, div.spe a[href*=/genre/]").map { it.text().trim() }
-        
+
         val ratingText = document.selectFirst("div.rating strong, .rtg strong")?.text()
-        val rating = ratingText?.replace("Rating", "", ignoreCase = true)?.trim()?.toRatingInt()
+        val rating = ratingText?.let { Regex("""([\d.]+)""").find(it)?.value?.toFloatOrNull()?.times(1000)?.toInt() }
 
         val isOngoing = document.select("div.spe span:contains(Status)").text().contains("Sedang Tayang", ignoreCase = true)
         val showStatus = if (isOngoing) ShowStatus.Ongoing else ShowStatus.Completed
