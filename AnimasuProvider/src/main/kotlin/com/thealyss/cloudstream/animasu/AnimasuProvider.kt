@@ -54,13 +54,11 @@ class AnimasuProvider : MainAPI() {
             }
         }
 
-        val latestEp = this.selectFirst(".epx, .bt .epx")?.text()?.trim()
-        val epNum = latestEp?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
         val isTypeMovie = this.selectFirst(".typez")?.text()?.contains("Movie", ignoreCase = true) == true
+        val tvType = if (isTypeMovie) TvType.AnimeMovie else TvType.Anime
 
-        return newAnimeSearchResponse(cleanTitle, href, if (isTypeMovie) TvType.AnimeMovie else TvType.Anime) {
+        return newMovieSearchResponse(cleanTitle, href, tvType) {
             this.posterUrl = fixUrlNull(posterUrl)
-            addSub(epNum)
         }
     }
 
@@ -118,9 +116,6 @@ class AnimasuProvider : MainAPI() {
         val synopsis = document.select("div.sinopsis, div[itemprop=articleBody], span.desc").text().trim()
         val genres = document.select("div.spe span:contains(Genre) a, .genxed a, div.spe a[href*=/genre/]").map { it.text().trim() }
 
-        val ratingText = document.selectFirst("div.rating strong, .rtg strong")?.text()
-        val rating = ratingText?.let { Regex("""([\d.]+)""").find(it)?.value?.toFloatOrNull()?.times(1000)?.toInt() }
-
         val isOngoing = document.select("div.spe span:contains(Status)").text().contains("Sedang Tayang", ignoreCase = true)
         val showStatus = if (isOngoing) ShowStatus.Ongoing else ShowStatus.Completed
 
@@ -128,7 +123,6 @@ class AnimasuProvider : MainAPI() {
         val year = Regex("""\b(19\d\d|20\d\d)\b""").find(yearText)?.value?.toIntOrNull()
 
         val isMovie = document.select("div.spe span:contains(Jenis)").text().contains("Movie", ignoreCase = true)
-        val tvType = if (isMovie) TvType.AnimeMovie else TvType.Anime
 
         val seen = HashSet<String>()
         val episodes = mutableListOf<Episode>()
@@ -167,16 +161,26 @@ class AnimasuProvider : MainAPI() {
             }
         }
 
-        episodes.sortBy { it.episode ?: 0 }
+        val sortedEpisodes = episodes
+            .distinctBy { it.data }
+            .sortedBy { it.episode ?: 0 }
 
-        return newAnimeLoadResponse(cleanTitle, url, tvType) {
+        if (isMovie && sortedEpisodes.size <= 1) {
+            val playUrl = sortedEpisodes.firstOrNull()?.data ?: url
+            return newMovieLoadResponse(cleanTitle, url, TvType.AnimeMovie, playUrl) {
+                this.posterUrl = poster
+                this.plot = synopsis.ifBlank { null }
+                this.tags = if (genres.isNotEmpty()) genres else null
+                this.year = year
+            }
+        }
+
+        return newTvSeriesLoadResponse(cleanTitle, url, TvType.Anime, sortedEpisodes) {
             this.posterUrl = poster
             this.plot = synopsis.ifBlank { null }
             this.tags = if (genres.isNotEmpty()) genres else null
-            this.rating = rating
             this.year = year
             this.showStatus = showStatus
-            addEpisodes(DubStatus.Subbed, episodes)
         }
     }
 
