@@ -23,33 +23,7 @@ class YlnimeProvider : MainAPI() {
         "$mainUrl/ongoing.php" to "Ongoing Anime",
         "$mainUrl/completed.php" to "Completed Anime",
         "$mainUrl/movies.php" to "Anime Movies",
-        "$mainUrl/anime-list.php?l=%23" to "A-Z: #",
-        "$mainUrl/anime-list.php?l=A" to "A-Z: A",
-        "$mainUrl/anime-list.php?l=B" to "A-Z: B",
-        "$mainUrl/anime-list.php?l=C" to "A-Z: C",
-        "$mainUrl/anime-list.php?l=D" to "A-Z: D",
-        "$mainUrl/anime-list.php?l=E" to "A-Z: E",
-        "$mainUrl/anime-list.php?l=F" to "A-Z: F",
-        "$mainUrl/anime-list.php?l=G" to "A-Z: G",
-        "$mainUrl/anime-list.php?l=H" to "A-Z: H",
-        "$mainUrl/anime-list.php?l=I" to "A-Z: I",
-        "$mainUrl/anime-list.php?l=J" to "A-Z: J",
-        "$mainUrl/anime-list.php?l=K" to "A-Z: K",
-        "$mainUrl/anime-list.php?l=L" to "A-Z: L",
-        "$mainUrl/anime-list.php?l=M" to "A-Z: M",
-        "$mainUrl/anime-list.php?l=N" to "A-Z: N",
-        "$mainUrl/anime-list.php?l=O" to "A-Z: O",
-        "$mainUrl/anime-list.php?l=P" to "A-Z: P",
-        "$mainUrl/anime-list.php?l=Q" to "A-Z: Q",
-        "$mainUrl/anime-list.php?l=R" to "A-Z: R",
-        "$mainUrl/anime-list.php?l=S" to "A-Z: S",
-        "$mainUrl/anime-list.php?l=T" to "A-Z: T",
-        "$mainUrl/anime-list.php?l=U" to "A-Z: U",
-        "$mainUrl/anime-list.php?l=V" to "A-Z: V",
-        "$mainUrl/anime-list.php?l=W" to "A-Z: W",
-        "$mainUrl/anime-list.php?l=X" to "A-Z: X",
-        "$mainUrl/anime-list.php?l=Y" to "A-Z: Y",
-        "$mainUrl/anime-list.php?l=Z" to "A-Z: Z"
+        "$mainUrl/anime-list.php" to "A-Z Anime List"
     )
 
     private fun fixYlnimeUrl(url: String): String {
@@ -112,6 +86,34 @@ class YlnimeProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
+        if (request.data.contains("anime-list.php")) {
+            val letters = listOf("%23", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z")
+            val batchSize = 3
+            val startIndex = (page - 1) * batchSize
+            if (startIndex >= letters.size) {
+                return newHomePageResponse(request.name, emptyList(), hasNext = false)
+            }
+            val endIndex = minOf(startIndex + batchSize, letters.size)
+            val batchLetters = letters.subList(startIndex, endIndex)
+
+            val items = mutableListOf<SearchResponse>()
+            for (letter in batchLetters) {
+                val letterUrl = "$mainUrl/anime-list.php?l=$letter"
+                try {
+                    val document = app.get(letterUrl, referer = "$mainUrl/").document
+                    val parsed = document.select("div.card, div.col-6, div.col-md-3, div.col-lg-2")
+                        .mapNotNull { it.toSearchResponse() }
+                    items.addAll(parsed)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            val distinctItems = items.distinctBy { it.url }
+            val hasNext = endIndex < letters.size
+            return newHomePageResponse(request.name, distinctItems, hasNext = hasNext)
+        }
+
         val url = if (page <= 1) {
             request.data
         } else {
