@@ -18,17 +18,17 @@ class AnimasuProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/anime/?status=ongoing&order=update" to "Sedang Tayang (Ongoing)",
-        "$mainUrl/anime/?status=&order=popular" to "Anime Paling Popular",
-        "$mainUrl/anime/?status=&order=latest" to "Baru Ditambah & Diperbarui",
-        "$mainUrl/anime/?status=completed&order=latest" to "Anime Tamat (Completed)",
-        "$mainUrl/anime/?status=&type=movie&order=latest" to "Filem Anime (Anime Movies)",
-        "$mainUrl/genre/isekai/" to "Anime Isekai",
-        "$mainUrl/genre/aksi/" to "Anime Aksi",
-        "$mainUrl/genre/donghua/" to "Donghua (Anime China)",
-        "$mainUrl/genre/fantasi/" to "Anime Fantasi",
-        "$mainUrl/genre/komedi/" to "Anime Komedi",
-        "$mainUrl/genre/romansa/" to "Anime Romansa"
+        "$mainUrl/anime/?status=ongoing&order=update" to "Ongoing Anime",
+        "$mainUrl/anime/?status=&order=popular" to "Popular Anime",
+        "$mainUrl/anime/?status=&order=latest" to "Latest Updated",
+        "$mainUrl/anime/?status=completed&order=latest" to "Completed Anime",
+        "$mainUrl/anime/?status=&type=movie&order=latest" to "Anime Movies",
+        "$mainUrl/genre/isekai/" to "Isekai Anime",
+        "$mainUrl/genre/aksi/" to "Action Anime",
+        "$mainUrl/genre/donghua/" to "Donghua (Chinese Anime)",
+        "$mainUrl/genre/fantasi/" to "Fantasy Anime",
+        "$mainUrl/genre/komedi/" to "Comedy Anime",
+        "$mainUrl/genre/romansa/" to "Romance Anime"
     )
 
     private fun Element.toSearchResponse(): SearchResponse? {
@@ -79,8 +79,9 @@ class AnimasuProvider : MainAPI() {
         }
 
         val document = app.get(url, referer = "$mainUrl/").document
-        val home = document.select("div.bs, article.bs, div.bsx, div.animepost")
+        val home = document.select("div.bsx, div.animepost, div.bs")
             .mapNotNull { it.toSearchResponse() }
+            .distinctBy { it.url }
 
         return newHomePageResponse(request.name, home)
     }
@@ -90,8 +91,9 @@ class AnimasuProvider : MainAPI() {
     override suspend fun search(query: String): List<SearchResponse> {
         val url = "$mainUrl/?s=${query.trim().replace(" ", "+")}"
         val document = app.get(url, referer = "$mainUrl/").document
-        return document.select("div.bs, article.bs, div.bsx, div.animepost")
+        return document.select("div.bsx, div.animepost, div.bs")
             .mapNotNull { it.toSearchResponse() }
+            .distinctBy { it.url }
     }
 
     override suspend fun load(url: String): LoadResponse {
@@ -184,6 +186,41 @@ class AnimasuProvider : MainAPI() {
         }
     }
 
+    private suspend fun extractYourUpload(url: String, callback: (ExtractorLink) -> Unit): Boolean {
+        return try {
+            val embedDoc = app.get(url, referer = "$mainUrl/").text
+            val fileMatch = Regex("""file\s*:\s*['"]([^'"]+\.mp4[^'"]*)['"]""").find(embedDoc)
+                ?: Regex("""property=["']og:video["']\s+content=["']([^"']+)["']""").find(embedDoc)
+            val mp4Url = fileMatch?.groupValues?.get(1) ?: return false
+            callback.invoke(
+                newExtractorLink("YourUpload", "YourUpload 720p", mp4Url, INFER_TYPE) {
+                    this.referer = "https://www.yourupload.com/"
+                    this.headers = mapOf(
+                        "Referer" to "https://www.yourupload.com/",
+                        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    )
+                    this.quality = Qualities.P720.value
+                }
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun extractAbyss(url: String, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
+        return try {
+            val slug = url.split("/").filter { it.isNotBlank() }.lastOrNull() ?: return false
+            val abysscdnUrl = "https://abysscdn.com/?v=$slug"
+            val shortInkUrl = "https://short.ink/$slug"
+            loadExtractor(abysscdnUrl, url, subtitleCallback, callback)
+            loadExtractor(shortInkUrl, url, subtitleCallback, callback)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     override suspend fun loadLinks(
         data: String,
         isCdn: Boolean,
@@ -203,7 +240,15 @@ class AnimasuProvider : MainAPI() {
                     if (!src.isNullOrBlank()) {
                         val fixedSrc = fixUrl(src)
                         if (seenUrls.add(fixedSrc)) {
-                            loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                            if (fixedSrc.contains("yourupload.com")) {
+                                if (!extractYourUpload(fixedSrc, callback)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                                }
+                            } else if (fixedSrc.contains("abyssplayer.com") || fixedSrc.contains("abysscdn.com") || fixedSrc.contains("short.ink")) {
+                                extractAbyss(fixedSrc, subtitleCallback, callback)
+                            } else {
+                                loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -218,7 +263,15 @@ class AnimasuProvider : MainAPI() {
             if (src.isNotBlank() && !src.contains("facebook") && !src.contains("cbox")) {
                 val fixedSrc = fixUrl(src)
                 if (seenUrls.add(fixedSrc)) {
-                    loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                    if (fixedSrc.contains("yourupload.com")) {
+                        if (!extractYourUpload(fixedSrc, callback)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                        }
+                    } else if (fixedSrc.contains("abyssplayer.com") || fixedSrc.contains("abysscdn.com") || fixedSrc.contains("short.ink")) {
+                        extractAbyss(fixedSrc, subtitleCallback, callback)
+                    } else {
+                        loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                    }
                 }
             }
         }
