@@ -198,61 +198,48 @@ class AnimasuProvider : MainAPI() {
 
             if (m3u8Match != null) {
                 val masterM3u8Url = m3u8Match.groupValues.getOrNull(1) ?: m3u8Match.value
-                val m3u8Text = app.get(masterM3u8Url, referer = url).text
-                val lines = m3u8Text.lines()
-                val extractedList = mutableListOf<ExtractorLink>()
-
-                for (i in lines.indices) {
-                    val line = lines[i].trim()
-                    if (line.startsWith("#EXT-X-STREAM-INF")) {
-                        val resMatch = Regex("""RESOLUTION=(\d+)x(\d+)""").find(line)
-                        val height = resMatch?.groupValues?.get(2)?.toIntOrNull() ?: 720
-                        val nextLine = lines.getOrNull(i + 1)?.trim()
-                        if (!nextLine.isNullOrBlank() && !nextLine.startsWith("#")) {
-                            val subUrl = if (nextLine.startsWith("http")) {
-                                nextLine
-                            } else if (nextLine.startsWith("/")) {
-                                "${masterM3u8Url.substringBefore("://")}://${masterM3u8Url.substringAfter("://").substringBefore("/")}$nextLine"
-                            } else {
-                                "${masterM3u8Url.substringBeforeLast("/")}/$nextLine"
-                            }
-                            val (qualityInt, qualityLabel) = when {
-                                height >= 1080 -> Qualities.P1080.value to "1080p FHD"
-                                height >= 720 -> Qualities.P720.value to "720p HD"
-                                height >= 480 -> Qualities.P480.value to "480p SD"
-                                else -> Qualities.P360.value to "${height}p"
-                            }
-                            extractedList.add(
-                                newExtractorLink(
-                                    source = "VidHide",
-                                    name = "VidHide - $qualityLabel",
-                                    url = subUrl,
-                                    type = ExtractorLinkType.VIDEO
-                                ) {
-                                    this.referer = url
-                                    this.quality = qualityInt
-                                }
-                            )
+                val list = M3u8Helper.generateM3u8(
+                    source = "VidHide",
+                    streamUrl = masterM3u8Url,
+                    referer = url
+                )
+                if (list.isNotEmpty()) {
+                    list.forEach { link ->
+                        val qualityLabel = when (link.quality) {
+                            Qualities.P1080.value -> "1080p FHD"
+                            Qualities.P720.value -> "720p HD"
+                            Qualities.P480.value -> "480p SD"
+                            Qualities.P360.value -> "360p SD"
+                            else -> if (link.quality > 0) "${link.quality}p" else "1080p FHD"
                         }
+                        callback.invoke(
+                            newExtractorLink(
+                                source = "VidHide",
+                                name = "VidHide - $qualityLabel",
+                                url = link.url,
+                                type = INFER_TYPE
+                            ) {
+                                this.referer = url
+                                this.headers = link.headers
+                                this.quality = if (link.quality > 0) link.quality else Qualities.P1080.value
+                            }
+                        )
                     }
-                }
-
-                if (extractedList.isEmpty()) {
-                    extractedList.add(
+                    true
+                } else {
+                    callback.invoke(
                         newExtractorLink(
                             source = "VidHide",
-                            name = "VidHide - 1080p FHD (Auto)",
+                            name = "VidHide - 1080p FHD",
                             url = masterM3u8Url,
-                            type = ExtractorLinkType.VIDEO
+                            type = INFER_TYPE
                         ) {
                             this.referer = url
                             this.quality = Qualities.P1080.value
                         }
                     )
+                    true
                 }
-
-                extractedList.forEach(callback)
-                true
             } else {
                 false
             }
@@ -272,7 +259,7 @@ class AnimasuProvider : MainAPI() {
                     source = "YourUpload",
                     name = "YourUpload - 720p HD",
                     url = mp4Url,
-                    type = ExtractorLinkType.VIDEO
+                    type = INFER_TYPE
                 ) {
                     this.referer = "https://www.yourupload.com/"
                     this.headers = mapOf(
@@ -299,7 +286,7 @@ class AnimasuProvider : MainAPI() {
                     source = "BerkasDrive",
                     name = "BerkasDrive - 720p HD",
                     url = mp4Url,
-                    type = ExtractorLinkType.VIDEO
+                    type = INFER_TYPE
                 ) {
                     this.referer = url
                     this.headers = mapOf(
@@ -342,7 +329,7 @@ class AnimasuProvider : MainAPI() {
                                 source = "AbyssPlayer",
                                 name = "AbyssPlayer - $label",
                                 url = streamUrl,
-                                type = ExtractorLinkType.VIDEO
+                                type = INFER_TYPE
                             ) {
                                 this.referer = "https://abysscdn.com/?v=$videoId"
                                 this.quality = quality
@@ -373,7 +360,7 @@ class AnimasuProvider : MainAPI() {
                         source = "Blogger",
                         name = "Blogger - $qualityLabel",
                         url = streamUrl,
-                        type = ExtractorLinkType.VIDEO
+                        type = INFER_TYPE
                     ) {
                         this.referer = url
                         this.quality = qualityInt
