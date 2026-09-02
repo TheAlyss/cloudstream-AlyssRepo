@@ -209,7 +209,13 @@ class AnimasuProvider : MainAPI() {
                         val height = resMatch?.groupValues?.get(2)?.toIntOrNull() ?: 720
                         val nextLine = lines.getOrNull(i + 1)?.trim()
                         if (!nextLine.isNullOrBlank() && !nextLine.startsWith("#")) {
-                            val subUrl = if (nextLine.startsWith("http")) nextLine else fixUrl(nextLine, masterM3u8Url)
+                            val subUrl = if (nextLine.startsWith("http")) {
+                                nextLine
+                            } else if (nextLine.startsWith("/")) {
+                                "${masterM3u8Url.substringBefore("://")}://${masterM3u8Url.substringAfter("://").substringBefore("/")}$nextLine"
+                            } else {
+                                "${masterM3u8Url.substringBeforeLast("/")}/$nextLine"
+                            }
                             val (qualityInt, qualityLabel) = when {
                                 height >= 1080 -> Qualities.P1080.value to "1080p FHD"
                                 height >= 720 -> Qualities.P720.value to "720p HD"
