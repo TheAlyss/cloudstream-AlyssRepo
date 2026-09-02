@@ -1,7 +1,9 @@
 ﻿package com.thealyss.cloudstream.animasu
 
+import android.util.Base64
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
+import org.json.JSONObject
 import org.jsoup.nodes.Element
 
 class AnimasuProvider : MainAPI() {
@@ -186,6 +188,73 @@ class AnimasuProvider : MainAPI() {
         }
     }
 
+    private suspend fun extractVidHide(url: String, callback: (ExtractorLink) -> Unit): Boolean {
+        return try {
+            val res = app.get(url, referer = "$mainUrl/").text
+            val unpacked = getAndUnpack(res) ?: res
+            val m3u8Match = Regex("""file\s*:\s*["']([^"']+\.m3u8[^"']*)["']""").find(unpacked)
+                ?: Regex("""["']?sources["']?\s*:\s*\[\s*\{[^}]*file\s*:\s*["']([^"']+)["']""").find(unpacked)
+                ?: Regex("""https?://[^\s"'\\]+\.m3u8[^\s"'\\]*""").find(unpacked)
+
+            if (m3u8Match != null) {
+                val masterM3u8Url = m3u8Match.groupValues.getOrNull(1) ?: m3u8Match.value
+                val m3u8Text = app.get(masterM3u8Url, referer = url).text
+                val lines = m3u8Text.lines()
+                val extractedList = mutableListOf<ExtractorLink>()
+
+                for (i in lines.indices) {
+                    val line = lines[i].trim()
+                    if (line.startsWith("#EXT-X-STREAM-INF")) {
+                        val resMatch = Regex("""RESOLUTION=(\d+)x(\d+)""").find(line)
+                        val height = resMatch?.groupValues?.get(2)?.toIntOrNull() ?: 720
+                        val nextLine = lines.getOrNull(i + 1)?.trim()
+                        if (!nextLine.isNullOrBlank() && !nextLine.startsWith("#")) {
+                            val subUrl = if (nextLine.startsWith("http")) nextLine else fixUrl(nextLine, masterM3u8Url)
+                            val (qualityInt, qualityLabel) = when {
+                                height >= 1080 -> Qualities.P1080.value to "1080p FHD"
+                                height >= 720 -> Qualities.P720.value to "720p HD"
+                                height >= 480 -> Qualities.P480.value to "480p SD"
+                                else -> Qualities.P360.value to "${height}p"
+                            }
+                            extractedList.add(
+                                newExtractorLink(
+                                    source = "VidHide",
+                                    name = "VidHide - $qualityLabel",
+                                    url = subUrl,
+                                    type = ExtractorLinkType.M3U8
+                                ) {
+                                    this.referer = url
+                                    this.quality = qualityInt
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (extractedList.isEmpty()) {
+                    extractedList.add(
+                        newExtractorLink(
+                            source = "VidHide",
+                            name = "VidHide - 1080p FHD (Auto)",
+                            url = masterM3u8Url,
+                            type = ExtractorLinkType.M3U8
+                        ) {
+                            this.referer = url
+                            this.quality = Qualities.P1080.value
+                        }
+                    )
+                }
+
+                extractedList.forEach(callback)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private suspend fun extractYourUpload(url: String, callback: (ExtractorLink) -> Unit): Boolean {
         return try {
             val embedDoc = app.get(url, referer = "$mainUrl/").text
@@ -195,7 +264,7 @@ class AnimasuProvider : MainAPI() {
             callback.invoke(
                 newExtractorLink(
                     source = "YourUpload",
-                    name = "YourUpload (720p Direct)",
+                    name = "YourUpload - 720p HD",
                     url = mp4Url,
                     type = ExtractorLinkType.VIDEO
                 ) {
@@ -222,7 +291,7 @@ class AnimasuProvider : MainAPI() {
             callback.invoke(
                 newExtractorLink(
                     source = "BerkasDrive",
-                    name = "BerkasDrive (720p Direct)",
+                    name = "BerkasDrive - 720p HD",
                     url = mp4Url,
                     type = ExtractorLinkType.VIDEO
                 ) {
@@ -240,14 +309,73 @@ class AnimasuProvider : MainAPI() {
         }
     }
 
-    private suspend fun extractAbyss(url: String, subtitleCallback: (SubtitleFile) -> Unit, callback: (ExtractorLink) -> Unit): Boolean {
+    private suspend fun extractAbyss(url: String, callback: (ExtractorLink) -> Unit): Boolean {
         return try {
-            val slug = url.split("/").filter { it.isNotBlank() }.lastOrNull() ?: return false
-            val abysscdnUrl = "https://abysscdn.com/?v=$slug"
-            val shortInkUrl = "https://short.ink/$slug"
-            loadExtractor(abysscdnUrl, url, subtitleCallback, callback)
-            loadExtractor(shortInkUrl, url, subtitleCallback, callback)
-            true
+            val videoId = url.split("/").filter { it.isNotBlank() }.lastOrNull() ?: return false
+            val apiResponse = app.get("https://player-cdn.com/?v=$videoId", referer = "$mainUrl/").text
+            val atobMatch = Regex("""atob\s*\(\s*["']([A-Za-z0-9+/=]+)["']\s*\)""").find(apiResponse)
+            if (atobMatch != null) {
+                val b64Str = atobMatch.groupValues[1]
+                val jsonBytes = Base64.decode(b64Str, Base64.DEFAULT)
+                val jsonStr = String(jsonBytes, Charsets.UTF_8)
+                val jsonObj = JSONObject(jsonStr)
+                val domain = jsonObj.optString("domain")
+                val id = jsonObj.optString("id")
+
+                if (domain.isNotBlank() && id.isNotBlank()) {
+                    val qualities = listOf(
+                        Triple("whw", Qualities.P1080.value, "1080p FHD"),
+                        Triple("www", Qualities.P720.value, "720p HD"),
+                        Triple("", Qualities.P360.value, "360p SD")
+                    )
+
+                    qualities.forEach { (prefix, quality, label) ->
+                        val streamUrl = "https://$domain/$prefix$id"
+                        callback.invoke(
+                            newExtractorLink(
+                                source = "AbyssPlayer",
+                                name = "AbyssPlayer - $label",
+                                url = streamUrl,
+                                type = ExtractorLinkType.VIDEO
+                            ) {
+                                this.referer = "https://abysscdn.com/?v=$videoId"
+                                this.quality = quality
+                            }
+                        )
+                    }
+                    return true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun extractBlogger(url: String, callback: (ExtractorLink) -> Unit): Boolean {
+        return try {
+            val page = app.get(url, referer = "$mainUrl/").text
+            val streamMatches = Regex("""["'](https://[^"']+\.googlevideo\.com/[^"']+)["']""").findAll(page)
+            var found = false
+            streamMatches.forEach { match ->
+                val streamUrl = match.groupValues[1].replace("\\u0026", "&")
+                val is720 = streamUrl.contains("itag=22") || streamUrl.contains("itag=37")
+                val qualityInt = if (is720) Qualities.P720.value else Qualities.P480.value
+                val qualityLabel = if (is720) "720p HD" else "480p SD"
+                callback.invoke(
+                    newExtractorLink(
+                        source = "Blogger",
+                        name = "Blogger - $qualityLabel",
+                        url = streamUrl,
+                        type = ExtractorLinkType.VIDEO
+                    ) {
+                        this.referer = url
+                        this.quality = qualityInt
+                    }
+                )
+                found = true
+            }
+            found
         } catch (e: Exception) {
             false
         }
@@ -261,6 +389,11 @@ class AnimasuProvider : MainAPI() {
     ): Boolean {
         val document = app.get(data, referer = "$mainUrl/").document
         val seenUrls = HashSet<String>()
+        val collectedLinks = mutableListOf<ExtractorLink>()
+
+        val linkCollector: (ExtractorLink) -> Unit = { link ->
+            collectedLinks.add(link)
+        }
 
         // 1. Base64 encoded iframe mirrors in <select class="mirror">
         document.select("select.mirror option, select[name=mirror] option").forEach { option ->
@@ -272,18 +405,28 @@ class AnimasuProvider : MainAPI() {
                     if (!src.isNullOrBlank()) {
                         val fixedSrc = fixUrl(src)
                         if (seenUrls.add(fixedSrc)) {
-                            if (fixedSrc.contains("yourupload.com")) {
-                                if (!extractYourUpload(fixedSrc, callback)) {
-                                    loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                            if (fixedSrc.contains("vidhide") || fixedSrc.contains("callistanise") || fixedSrc.contains("streamwish")) {
+                                if (!extractVidHide(fixedSrc, linkCollector)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
+                                }
+                            } else if (fixedSrc.contains("yourupload.com")) {
+                                if (!extractYourUpload(fixedSrc, linkCollector)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
                                 }
                             } else if (fixedSrc.contains("berkasdrive.com") || fixedSrc.contains("mitedrive.com")) {
-                                if (!extractBerkasDrive(fixedSrc, callback)) {
-                                    loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                                if (!extractBerkasDrive(fixedSrc, linkCollector)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
                                 }
                             } else if (fixedSrc.contains("abyssplayer.com") || fixedSrc.contains("abysscdn.com") || fixedSrc.contains("short.ink")) {
-                                extractAbyss(fixedSrc, subtitleCallback, callback)
+                                if (!extractAbyss(fixedSrc, linkCollector)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
+                                }
+                            } else if (fixedSrc.contains("blogger.com")) {
+                                if (!extractBlogger(fixedSrc, linkCollector)) {
+                                    loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
+                                }
                             } else {
-                                loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                                loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
                             }
                         }
                     }
@@ -299,23 +442,40 @@ class AnimasuProvider : MainAPI() {
             if (src.isNotBlank() && !src.contains("facebook") && !src.contains("cbox")) {
                 val fixedSrc = fixUrl(src)
                 if (seenUrls.add(fixedSrc)) {
-                    if (fixedSrc.contains("yourupload.com")) {
-                        if (!extractYourUpload(fixedSrc, callback)) {
-                            loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                    if (fixedSrc.contains("vidhide") || fixedSrc.contains("callistanise") || fixedSrc.contains("streamwish")) {
+                        if (!extractVidHide(fixedSrc, linkCollector)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
+                        }
+                    } else if (fixedSrc.contains("yourupload.com")) {
+                        if (!extractYourUpload(fixedSrc, linkCollector)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
                         }
                     } else if (fixedSrc.contains("berkasdrive.com") || fixedSrc.contains("mitedrive.com")) {
-                        if (!extractBerkasDrive(fixedSrc, callback)) {
-                            loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                        if (!extractBerkasDrive(fixedSrc, linkCollector)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
                         }
                     } else if (fixedSrc.contains("abyssplayer.com") || fixedSrc.contains("abysscdn.com") || fixedSrc.contains("short.ink")) {
-                        extractAbyss(fixedSrc, subtitleCallback, callback)
+                        if (!extractAbyss(fixedSrc, linkCollector)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
+                        }
+                    } else if (fixedSrc.contains("blogger.com")) {
+                        if (!extractBlogger(fixedSrc, linkCollector)) {
+                            loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
+                        }
                     } else {
-                        loadExtractor(fixedSrc, data, subtitleCallback, callback)
+                        loadExtractor(fixedSrc, data, subtitleCallback, linkCollector)
                     }
                 }
             }
         }
 
-        return seenUrls.isNotEmpty()
+        // Distinct by url and sort so 1080p runs FIRST!
+        val sortedLinks = collectedLinks
+            .distinctBy { it.url }
+            .sortedByDescending { it.quality }
+
+        sortedLinks.forEach(callback)
+
+        return sortedLinks.isNotEmpty()
     }
 }
