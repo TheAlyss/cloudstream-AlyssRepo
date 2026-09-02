@@ -79,6 +79,6 @@ jobs:
           git commit -m "Update CloudStream plugins and plugins.json [skip ci]" || exit 0
           git push origin builds
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/plugins.json" || true
-          curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/AnimasuProvider.cs3" || true
+          curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/YlnimeProvider.cs3" || true
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/FilmapikProvider.cs3" || true
           curl -s "https://purge.jsdelivr.net/gh/${{ github.repository }}@builds/MovieboxProvider.cs3" || true
