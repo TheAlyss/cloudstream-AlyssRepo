@@ -1,4 +1,4 @@
-﻿name: Build Plugins
+name: Build Plugins
 
 permissions:
   contents: write
@@ -42,8 +42,23 @@ jobs:
         run: |
           cd src
           chmod +x gradlew
-          ./gradlew make makePluginsJson --stacktrace > build_output.log 2>&1 || {
-            echo "BUILD FAILED" >> build_output.log
+          BUILD_SUCCESS=false
+          for attempt in 1 2 3; do
+            echo "=== Build attempt $attempt ===" | tee -a build_output.log
+            if ./gradlew make makePluginsJson --stacktrace >> build_output.log 2>&1; then
+              BUILD_SUCCESS=true
+              break
+            fi
+            if [ $attempt -lt 3 ]; then
+              echo "Attempt $attempt failed (likely Jitpack transient issue), retrying in 30s..." | tee -a build_output.log
+              # Clear Gradle caches for failed SNAPSHOT resolution
+              find ~/.gradle/caches -name "*.lock" -delete 2>/dev/null || true
+              rm -rf ~/.gradle/caches/modules-2/files-2.1/com.github.recloudstream 2>/dev/null || true
+              sleep 30
+            fi
+          done
+          if [ "$BUILD_SUCCESS" = false ]; then
+            echo "BUILD FAILED after 3 attempts" >> build_output.log
             mkdir -p ../builds
             cp build_output.log ../builds/
             cd ../builds
@@ -58,7 +73,7 @@ jobs:
             git commit -m "Capture build failure log [skip ci]" || true
             git push origin builds
             exit 1
-          }
+          fi
           mkdir -p ../builds
           cp repo.json ../builds/ 2>/dev/null || true
           cp build/*.cs3 ../builds/ 2>/dev/null || true
