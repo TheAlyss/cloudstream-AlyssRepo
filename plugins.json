@@ -1,27 +1,5 @@
 [
     {
-        "iconUrl": "https://2.bp.blogspot.com/-QiWOTKfmgHg/XcWMAQMFtzI/AAAAAAAAFkM/9X0xgYkMVEAndahC2JNb-v4tFX8JLOWRACLcBGAsYHQ/s200/animasudotnet_simple_logo.png",
-        "fileHash": "sha256-2add38dc6ef62a0cb50b78dd608497ace696a73af771151b180f5e8a611fd1dd",
-        "apiVersion": 1,
-        "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 27257,
-        "status": 1,
-        "language": "id",
-        "authors": [
-            "TheAlyss"
-        ],
-        "tvTypes": [
-            "Anime",
-            "TvSeries",
-            "Movie"
-        ],
-        "version": 6,
-        "internalName": "AnimasuProvider",
-        "description": "Nonton Anime Subtitle Indonesia dari Animasu",
-        "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AnimasuProvider.cs3",
-        "name": "AnimasuProvider"
-    },
-    {
         "iconUrl": "https://filmapik.dev/wp-content/uploads/2026/06/cropped-apple-icon-180x180-1-1-270x270.webp",
         "fileHash": "sha256-ca01b88c5e084657e6d5614ff84d4ff2079b5a4d07c7003d02cfd1e2c8dd2c56",
         "apiVersion": 1,
@@ -65,5 +43,27 @@
         "description": "MovieBox - Streaming Movie Subtitle Indonesia",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/MovieboxProvider.cs3",
         "name": "MovieboxProvider"
+    },
+    {
+        "iconUrl": "https://ylnime.com/banner.jpg",
+        "fileHash": "sha256-b7d530e0717bb5c8316caa8ed3094231273d0ddbf4d9f359485902d35d0528a8",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
+        "fileSize": 19224,
+        "status": 1,
+        "language": "id",
+        "authors": [
+            "TheAlyss"
+        ],
+        "tvTypes": [
+            "Anime",
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 1,
+        "internalName": "YlnimeProvider",
+        "description": "Nonton Anime Subtitle Indonesia dari YLnime",
+        "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/YlnimeProvider.cs3",
+        "name": "YlnimeProvider"
     }
 ]
