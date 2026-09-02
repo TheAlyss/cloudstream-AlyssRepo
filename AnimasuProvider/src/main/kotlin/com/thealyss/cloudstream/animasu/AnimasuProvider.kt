@@ -193,7 +193,12 @@ class AnimasuProvider : MainAPI() {
                 ?: Regex("""property=["']og:video["']\s+content=["']([^"']+)["']""").find(embedDoc)
             val mp4Url = fileMatch?.groupValues?.get(1) ?: return false
             callback.invoke(
-                newExtractorLink("YourUpload", "YourUpload 720p", mp4Url, INFER_TYPE) {
+                newExtractorLink(
+                    source = "YourUpload",
+                    name = "YourUpload (720p Direct)",
+                    url = mp4Url,
+                    type = ExtractorLinkType.VIDEO
+                ) {
                     this.referer = "https://www.yourupload.com/"
                     this.headers = mapOf(
                         "Referer" to "https://www.yourupload.com/",
@@ -215,7 +220,12 @@ class AnimasuProvider : MainAPI() {
                 ?: Regex("""file\s*:\s*["']([^"']+\.mp4[^"']*)["']""").find(doc)
             val mp4Url = (videoMatch?.groupValues?.get(1)?.ifBlank { null } ?: videoMatch?.groupValues?.get(2)) ?: return false
             callback.invoke(
-                newExtractorLink("BerkasDrive", "BerkasDrive 720p", mp4Url, INFER_TYPE) {
+                newExtractorLink(
+                    source = "BerkasDrive",
+                    name = "BerkasDrive (720p Direct)",
+                    url = mp4Url,
+                    type = ExtractorLinkType.VIDEO
+                ) {
                     this.referer = url
                     this.headers = mapOf(
                         "Referer" to url,
