@@ -46,10 +46,10 @@
     },
     {
         "iconUrl": "https://ylnime.com/banner.jpg",
-        "fileHash": "sha256-3f1dba153c5b5b8a4ddb1bd170d752ebaea85e3f65e3bbd5c7600aae259f0e4f",
+        "fileHash": "sha256-58e3a47ca7479f2539614fca7d95e6917fac70865021183f5417488d4737a816",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 21679,
+        "fileSize": 22142,
         "status": 1,
         "language": "id",
         "authors": [
@@ -60,7 +60,7 @@
             "TvSeries",
             "Movie"
         ],
-        "version": 4,
+        "version": 5,
         "internalName": "YlnimeProvider",
         "description": "Nonton Anime Subtitle Indonesia dari YLnime",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/YlnimeProvider.cs3",
