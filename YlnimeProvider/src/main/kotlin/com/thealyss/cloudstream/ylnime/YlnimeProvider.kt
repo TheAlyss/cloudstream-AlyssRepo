@@ -198,7 +198,7 @@ class YlnimeProvider : MainAPI() {
         }
     }
 
-    private fun extractStreamsFromJson(html: String, pageUrl: String): List<ExtractorLink> {
+    private suspend fun extractStreamsFromJson(html: String, pageUrl: String): List<ExtractorLink> {
         val links = mutableListOf<ExtractorLink>()
         val streamsMatch = Regex("""const\s+streams\s*=\s*(\[[\s\S]*?\]);""").find(html) ?: return links
         try {
@@ -285,7 +285,7 @@ class YlnimeProvider : MainAPI() {
         val html = document.html()
         val collectedLinks = mutableListOf<ExtractorLink>()
 
-        // 1. Extract streams from current page (usually 720p default)
+        // 1. Extract streams from current page (default 720p)
         collectedLinks.addAll(extractStreamsFromJson(html, fixedUrl))
 
         // 2. Extract streams from 1080p page if available
