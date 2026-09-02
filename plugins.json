@@ -1,5 +1,27 @@
 [
     {
+        "iconUrl": "https://2.bp.blogspot.com/-QiWOTKfmgHg/XcWMAQMFtzI/AAAAAAAAFkM/9X0xgYkMVEAndahC2JNb-v4tFX8JLOWRACLcBGAsYHQ/s200/animasudotnet_simple_logo.png",
+        "fileHash": "sha256-70973226b6e6795c8de2b2bdb6b06814d1f30738826f644d24bcb3775a003541",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
+        "fileSize": 15608,
+        "status": 1,
+        "language": "id",
+        "authors": [
+            "TheAlyss"
+        ],
+        "tvTypes": [
+            "Anime",
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 1,
+        "internalName": "AnimasuProvider",
+        "description": "Nonton Anime Subtitle Indonesia dari Animasu",
+        "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AnimasuProvider.cs3",
+        "name": "AnimasuProvider"
+    },
+    {
         "iconUrl": "https://filmapik.dev/wp-content/uploads/2026/06/cropped-apple-icon-180x180-1-1-270x270.webp",
         "fileHash": "sha256-ca01b88c5e084657e6d5614ff84d4ff2079b5a4d07c7003d02cfd1e2c8dd2c56",
         "apiVersion": 1,
