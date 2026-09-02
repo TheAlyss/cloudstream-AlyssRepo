@@ -1,10 +1,10 @@
 [
     {
         "iconUrl": "https://2.bp.blogspot.com/-QiWOTKfmgHg/XcWMAQMFtzI/AAAAAAAAFkM/9X0xgYkMVEAndahC2JNb-v4tFX8JLOWRACLcBGAsYHQ/s200/animasudotnet_simple_logo.png",
-        "fileHash": "sha256-d80b075f9f99509207919517a32346c34ec60bb10fcbb97d63c6648dcbf1ddc6",
+        "fileHash": "sha256-2add38dc6ef62a0cb50b78dd608497ace696a73af771151b180f5e8a611fd1dd",
         "apiVersion": 1,
         "repositoryUrl": "https://github.com/TheAlyss/cloudstream-AlyssRepo",
-        "fileSize": 27989,
+        "fileSize": 27257,
         "status": 1,
         "language": "id",
         "authors": [
@@ -15,7 +15,7 @@
             "TvSeries",
             "Movie"
         ],
-        "version": 5,
+        "version": 6,
         "internalName": "AnimasuProvider",
         "description": "Nonton Anime Subtitle Indonesia dari Animasu",
         "url": "https://raw.githubusercontent.com/TheAlyss/cloudstream-AlyssRepo/builds/AnimasuProvider.cs3",
