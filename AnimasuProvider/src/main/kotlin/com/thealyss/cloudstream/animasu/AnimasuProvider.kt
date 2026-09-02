@@ -227,7 +227,7 @@ class AnimasuProvider : MainAPI() {
                                     source = "VidHide",
                                     name = "VidHide - $qualityLabel",
                                     url = subUrl,
-                                    type = ExtractorLinkType.M3U8
+                                    type = ExtractorLinkType.VIDEO
                                 ) {
                                     this.referer = url
                                     this.quality = qualityInt
@@ -243,7 +243,7 @@ class AnimasuProvider : MainAPI() {
                             source = "VidHide",
                             name = "VidHide - 1080p FHD (Auto)",
                             url = masterM3u8Url,
-                            type = ExtractorLinkType.M3U8
+                            type = ExtractorLinkType.VIDEO
                         ) {
                             this.referer = url
                             this.quality = Qualities.P1080.value
